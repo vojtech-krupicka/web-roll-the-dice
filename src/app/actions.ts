@@ -19,12 +19,7 @@ export async function checkGameAction(
 export async function joinGameWithPasswordAction(
   hash: string,
   password: string,
-  repeatPassword: string,
 ): Promise<ActionResult> {
-  if (password !== repeatPassword) {
-    return { ok: false, error: "Passwords don't match." };
-  }
-
   const game = await findGameByHash(hash.trim().toLowerCase());
   if (!game) return { ok: false, error: "No game found with that hash." };
   if (!game.passwordHash) return { ok: true, data: undefined };

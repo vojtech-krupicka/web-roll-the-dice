@@ -156,7 +156,14 @@ export function GameView({ hash, initialName, hasPassword: initialHasPassword }:
   return (
     <div className="flex min-h-dvh flex-col">
       <TopBar
-        left={<SettingsButton onClick={() => setSettingsOpen(true)} />}
+        left={
+          <div className="relative">
+            <SettingsButton onClick={() => setSettingsOpen(true)} />
+            {settingsOpen && (
+              <SettingsMenu hash={hash} onDismiss={() => setSettingsOpen(false)} />
+            )}
+          </div>
+        }
         center={
           <button
             type="button"
@@ -209,8 +216,6 @@ export function GameView({ hash, initialName, hasPassword: initialHasPassword }:
           onDismiss={() => setEditOpen(false)}
         />
       )}
-
-      {settingsOpen && <SettingsMenu hash={hash} onDismiss={() => setSettingsOpen(false)} />}
     </div>
   );
 }

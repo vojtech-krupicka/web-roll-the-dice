@@ -42,19 +42,18 @@ export function SettingsMenu({ hash, onDismiss }: SettingsMenuProps) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-6"
-      onClick={onDismiss}
-    >
+    <>
+      {/* Invisible full-screen layer just to catch outside clicks — no dimming, this is a menu, not a dialog. */}
+      <div className="fixed inset-0 z-30" onClick={onDismiss} />
       <div
-        className="w-full max-w-xs rounded-2xl bg-background p-2 shadow-2xl"
+        className="absolute top-full left-0 z-40 mt-2 w-56 rounded-2xl border border-neutral-200 bg-background p-2 shadow-2xl dark:border-neutral-800"
         onClick={(event) => event.stopPropagation()}
       >
         <MenuItem icon={<LogOut size={18} />} label="Leave game" onClick={() => setView("leave-confirm")} />
         <MenuItem icon={<BookOpen size={18} />} label="Legend" onClick={() => setView("legend")} />
         <MenuItem icon={<Info size={18} />} label="About" onClick={() => setView("about")} />
       </div>
-    </div>
+    </>
   );
 }
 

@@ -6,6 +6,7 @@ import { X } from "lucide-react";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { deleteGameAction, leaveGameAction, updateGameAction } from "@/app/actions";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 const inputClass =
   "rounded-xl border border-neutral-300 bg-transparent px-4 py-3 outline-none focus:border-neutral-500 dark:border-neutral-700 dark:focus:border-neutral-400";
@@ -112,25 +113,22 @@ export function GameEditPane({
           Change password
         </label>
         {hasPassword && (
-          <input
-            type="password"
+          <PasswordInput
             value={currentPassword}
-            onChange={(event) => setCurrentPassword(event.target.value)}
+            onChange={setCurrentPassword}
             placeholder="Current password"
             className={inputClass}
           />
         )}
-        <input
-          type="password"
+        <PasswordInput
           value={newPassword}
-          onChange={(event) => setNewPassword(event.target.value)}
+          onChange={setNewPassword}
           placeholder="New password"
           className={inputClass}
         />
-        <input
-          type="password"
+        <PasswordInput
           value={repeatNewPassword}
-          onChange={(event) => setRepeatNewPassword(event.target.value)}
+          onChange={setRepeatNewPassword}
           placeholder="Repeat new password"
           className={inputClass}
         />
@@ -163,10 +161,9 @@ export function GameEditPane({
 
         <div className="flex flex-col gap-2">
           {hasPassword && (
-            <input
-              type="password"
+            <PasswordInput
               value={deletePassword}
-              onChange={(event) => setDeletePassword(event.target.value)}
+              onChange={setDeletePassword}
               placeholder="Password"
               className={inputClass}
             />

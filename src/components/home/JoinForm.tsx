@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { checkGameAction, joinGameWithPasswordAction } from "@/app/actions";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 type Stage = "hash" | "password";
 
@@ -13,13 +14,12 @@ type JoinFormProps = {
   initialHash?: string;
 };
 
-/** Hash input + Join button; reveals password fields for protected games. */
+/** Hash input + Join button; reveals a password field for protected games. */
 export function JoinForm({ initialHash = "" }: JoinFormProps) {
   const router = useRouter();
   const [hash, setHash] = useState(initialHash);
   const [stage, setStage] = useState<Stage>("hash");
   const [password, setPassword] = useState("");
-  const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -27,7 +27,6 @@ export function JoinForm({ initialHash = "" }: JoinFormProps) {
     setHash(nextHash);
     setStage("hash");
     setPassword("");
-    setRepeatPassword("");
     setError(null);
   }
 
@@ -55,7 +54,7 @@ export function JoinForm({ initialHash = "" }: JoinFormProps) {
     const trimmed = hash.trim().toLowerCase();
     setPending(true);
     setError(null);
-    const result = await joinGameWithPasswordAction(trimmed, password, repeatPassword);
+    const result = await joinGameWithPasswordAction(trimmed, password);
     setPending(false);
 
     if (!result.ok) {
@@ -90,24 +89,16 @@ export function JoinForm({ initialHash = "" }: JoinFormProps) {
 
       {stage === "password" && (
         <div className="flex flex-col gap-2">
-          <input
-            type="password"
+          <PasswordInput
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={setPassword}
             placeholder="Password"
-            className={inputClass}
-          />
-          <input
-            type="password"
-            value={repeatPassword}
-            onChange={(event) => setRepeatPassword(event.target.value)}
-            placeholder="Repeat password"
             className={inputClass}
           />
           <button
             type="button"
             onClick={handleConfirmPassword}
-            disabled={pending || !password || !repeatPassword}
+            disabled={pending || !password}
             className="rounded-xl bg-neutral-900 px-5 py-3 font-semibold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
           >
             Confirm

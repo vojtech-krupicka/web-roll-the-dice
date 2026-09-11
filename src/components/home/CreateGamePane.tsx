@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createGameAction } from "@/app/actions";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 const inputClass =
   "rounded-xl border border-neutral-300 bg-transparent px-4 py-3 outline-none focus:border-neutral-500 dark:border-neutral-700 dark:focus:border-neutral-400";
@@ -53,17 +54,15 @@ export function CreateGamePane({ onDismiss }: CreateGamePaneProps) {
             placeholder="Game name"
             className={inputClass}
           />
-          <input
-            type="password"
+          <PasswordInput
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={setPassword}
             placeholder="Password (optional)"
             className={inputClass}
           />
-          <input
-            type="password"
+          <PasswordInput
             value={repeatPassword}
-            onChange={(event) => setRepeatPassword(event.target.value)}
+            onChange={setRepeatPassword}
             placeholder="Repeat password"
             className={inputClass}
           />
