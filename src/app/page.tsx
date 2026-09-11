@@ -7,7 +7,7 @@ import { HandPane } from "@/components/dice/HandPane";
 import { DropArea } from "@/components/dice/DropArea";
 import { RollButton } from "@/components/dice/RollButton";
 import { ResultPopup } from "@/components/dice/ResultPopup";
-import { ROLL_ANIMATION_DURATION_MS, ROLL_TICK_INTERVAL_MS, rollDie } from "@/lib/dice";
+import { ROLL_TICK_INTERVAL_MS, randomRollDuration, rollDie } from "@/lib/dice";
 import {
   DEFAULT_HAND,
   activeDiceCount,
@@ -27,21 +27,30 @@ export default function Home() {
   const [rollState, setRollState] = useState<RollState>("idle");
   const [faces, setFaces] = useState<Record<string, number>>({});
   const [result, setResult] = useState<number | null>(null);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timersRef = useRef<{
+    intervals: ReturnType<typeof setInterval>[];
+    timeouts: ReturnType<typeof setTimeout>[];
+  }>({ intervals: [], timeouts: [] });
 
   const diceInstances = useMemo(() => flattenHand(hand), [hand]);
 
+  function clearRollTimers() {
+    timersRef.current.intervals.forEach(clearInterval);
+    timersRef.current.timeouts.forEach(clearTimeout);
+    timersRef.current.intervals = [];
+    timersRef.current.timeouts = [];
+  }
+
   // Clean up any pending timers if the component unmounts mid-roll.
   useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
+    return () => clearRollTimers();
   }, []);
 
   function handleToggleHandPane() {
     if (!handPaneOpen) {
+      // Abandon any roll in progress rather than let it finish behind the
+      // pane and pop up a result once it's closed again.
+      clearRollTimers();
       setHandError(null);
       setResult(null);
       setRollState("idle");
@@ -88,22 +97,34 @@ export default function Home() {
   function handleRoll() {
     if (rollState !== "idle" || diceInstances.length === 0) return;
 
+    clearRollTimers();
     setRollState("rolling");
-    intervalRef.current = setInterval(() => {
-      setFaces(
-        Object.fromEntries(diceInstances.map((die) => [die.key, rollDie(die.sides)])),
-      );
-    }, ROLL_TICK_INTERVAL_MS);
 
-    timeoutRef.current = setTimeout(() => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      const finalFaces = Object.fromEntries(
-        diceInstances.map((die) => [die.key, rollDie(die.sides)]),
-      );
-      setFaces(finalFaces);
-      setResult(Object.values(finalFaces).reduce((sum, value) => sum + value, 0));
-      setRollState("result");
-    }, ROLL_ANIMATION_DURATION_MS);
+    // Each die gets its own random duration, so they stop at different
+    // moments — the result only shows once every die has settled.
+    const finalFaces: Record<string, number> = {};
+    let settledCount = 0;
+
+    diceInstances.forEach((die) => {
+      const intervalId = setInterval(() => {
+        setFaces((prev) => ({ ...prev, [die.key]: rollDie(die.sides) }));
+      }, ROLL_TICK_INTERVAL_MS);
+      timersRef.current.intervals.push(intervalId);
+
+      const timeoutId = setTimeout(() => {
+        clearInterval(intervalId);
+        const finalValue = rollDie(die.sides);
+        finalFaces[die.key] = finalValue;
+        setFaces((prev) => ({ ...prev, [die.key]: finalValue }));
+
+        settledCount += 1;
+        if (settledCount === diceInstances.length) {
+          setResult(Object.values(finalFaces).reduce((sum, value) => sum + value, 0));
+          setRollState("result");
+        }
+      }, randomRollDuration());
+      timersRef.current.timeouts.push(timeoutId);
+    });
   }
 
   function handleDismissResult() {

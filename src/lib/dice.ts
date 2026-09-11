@@ -1,8 +1,17 @@
-/** Duration of the "rolling" sprite-swap animation, in milliseconds. */
-export const ROLL_ANIMATION_DURATION_MS = 500;
+/**
+ * Each die's "rolling" sprite-swap animation runs for its own random
+ * duration in this range, so a hand doesn't all stop at once.
+ */
+export const ROLL_MIN_DURATION_MS = 500;
+export const ROLL_MAX_DURATION_MS = 2000;
 
-/** How often the die face swaps to a random value while rolling. */
+/** How often a rolling die's face swaps to a random value. */
 export const ROLL_TICK_INTERVAL_MS = 90;
+
+/** Picks a random roll-animation duration within the configured range. */
+export function randomRollDuration(): number {
+  return ROLL_MIN_DURATION_MS + Math.random() * (ROLL_MAX_DURATION_MS - ROLL_MIN_DURATION_MS);
+}
 
 /**
  * Rolls a single die with the given number of sides.
