@@ -1,15 +1,18 @@
 import type { ReactNode } from "react";
 
 type TopBarProps = {
-  children?: ReactNode;
+  left?: ReactNode;
+  center?: ReactNode;
+  right?: ReactNode;
 };
 
-/** App header. Left side is reserved for a future title/buttons. */
-export function TopBar({ children }: TopBarProps) {
+/** App header with three slots: settings/left, game title/center, actions/right. */
+export function TopBar({ left, center, right }: TopBarProps) {
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between border-b border-neutral-200 bg-background px-4 dark:border-neutral-800">
-      <div />
-      <div className="flex items-center gap-2">{children}</div>
+    <header className="grid h-14 shrink-0 grid-cols-3 items-center border-b border-neutral-200 bg-background px-4 dark:border-neutral-800">
+      <div className="flex items-center justify-start gap-2">{left}</div>
+      <div className="flex items-center justify-center gap-2 overflow-hidden">{center}</div>
+      <div className="flex items-center justify-end gap-2">{right}</div>
     </header>
   );
 }
