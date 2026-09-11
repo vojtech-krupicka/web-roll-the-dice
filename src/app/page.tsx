@@ -64,11 +64,9 @@ export default function Home() {
   }
 
   function handleToggleEnabled(sides: DieSides) {
-    updateEntry(sides, (entry) => {
-      const enabled = !entry.enabled;
-      // Turning a type off removes its dice; turning it back on starts from 0.
-      return { ...entry, enabled, count: enabled ? entry.count : 0 };
-    });
+    // Disabling only excludes the type from rolls (it won't appear in the
+    // drop area) — the count is preserved, so re-enabling restores it.
+    updateEntry(sides, (entry) => ({ ...entry, enabled: !entry.enabled }));
   }
 
   function handleIncrement(sides: DieSides) {
@@ -83,7 +81,7 @@ export default function Home() {
     setHand((prev) =>
       prev.some((entry) => entry.sides === sides)
         ? prev
-        : [...prev, { sides, enabled: true, count: 0 }],
+        : [...prev, { sides, enabled: true, count: 1 }],
     );
   }
 
