@@ -1,5 +1,9 @@
-/** Supported die types. Only d6 for now — more sides will be added later. */
-export type DieSides = 6;
+/**
+ * Supported die types. d2 is a coin flip (see rollDie/CoinFace) — its values
+ * are 0/1 rather than 1..sides like every other type.
+ */
+export const DIE_TYPES = [2, 4, 6, 8, 10, 12, 20, 100] as const;
+export type DieSides = (typeof DIE_TYPES)[number];
 
 export type HandEntry = {
   sides: DieSides;

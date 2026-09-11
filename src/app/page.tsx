@@ -79,6 +79,14 @@ export default function Home() {
     updateEntry(sides, (entry) => ({ ...entry, count: Math.max(0, entry.count - 1) }));
   }
 
+  function handleAddDieType(sides: DieSides) {
+    setHand((prev) =>
+      prev.some((entry) => entry.sides === sides)
+        ? prev
+        : [...prev, { sides, enabled: true, count: 0 }],
+    );
+  }
+
   function handleRoll() {
     if (rollState !== "idle" || diceInstances.length === 0) return;
 
@@ -115,6 +123,7 @@ export default function Home() {
         <DropArea
           dice={diceInstances.map((die) => ({
             key: die.key,
+            sides: die.sides,
             face: faces[die.key] ?? 1,
           }))}
         />
@@ -133,6 +142,7 @@ export default function Home() {
             onToggleEnabled={handleToggleEnabled}
             onIncrement={handleIncrement}
             onDecrement={handleDecrement}
+            onAddDieType={handleAddDieType}
           />
         )}
       </div>
