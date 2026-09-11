@@ -1,23 +1,36 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { TopBar } from "@/components/layout/TopBar";
+import { HandToggleButton } from "@/components/dice/HandToggleButton";
+import { HandPane } from "@/components/dice/HandPane";
 import { DropArea } from "@/components/dice/DropArea";
 import { RollButton } from "@/components/dice/RollButton";
 import { ResultPopup } from "@/components/dice/ResultPopup";
+import { ROLL_ANIMATION_DURATION_MS, ROLL_TICK_INTERVAL_MS, rollDie } from "@/lib/dice";
 import {
-  ROLL_ANIMATION_DURATION_MS,
-  ROLL_TICK_INTERVAL_MS,
-  rollD6,
-} from "@/lib/dice";
+  DEFAULT_HAND,
+  activeDiceCount,
+  flattenHand,
+  pruneEmptyEnabledEntries,
+  type DieSides,
+  type HandEntry,
+} from "@/lib/hand";
 
 type RollState = "idle" | "rolling" | "result";
 
 export default function Home() {
-  const [state, setState] = useState<RollState>("idle");
-  const [face, setFace] = useState(1);
+  const [hand, setHand] = useState<HandEntry[]>(DEFAULT_HAND);
+  const [handPaneOpen, setHandPaneOpen] = useState(false);
+  const [handError, setHandError] = useState<string | null>(null);
+
+  const [rollState, setRollState] = useState<RollState>("idle");
+  const [faces, setFaces] = useState<Record<string, number>>({});
   const [result, setResult] = useState<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const diceInstances = useMemo(() => flattenHand(hand), [hand]);
 
   // Clean up any pending timers if the component unmounts mid-roll.
   useEffect(() => {
@@ -27,38 +40,102 @@ export default function Home() {
     };
   }, []);
 
-  function handleRoll() {
-    if (state !== "idle") return;
+  function handleToggleHandPane() {
+    if (!handPaneOpen) {
+      setHandError(null);
+      setResult(null);
+      setRollState("idle");
+      setHandPaneOpen(true);
+      return;
+    }
 
-    setState("rolling");
+    if (activeDiceCount(hand) === 0) {
+      setHandError("Select at least one die before closing your hand.");
+      return;
+    }
+
+    setHand((prev) => pruneEmptyEnabledEntries(prev));
+    setHandError(null);
+    setHandPaneOpen(false);
+  }
+
+  function updateEntry(sides: DieSides, update: (entry: HandEntry) => HandEntry) {
+    setHand((prev) => prev.map((entry) => (entry.sides === sides ? update(entry) : entry)));
+  }
+
+  function handleToggleEnabled(sides: DieSides) {
+    updateEntry(sides, (entry) => {
+      const enabled = !entry.enabled;
+      // Turning a type off removes its dice; turning it back on starts from 0.
+      return { ...entry, enabled, count: enabled ? entry.count : 0 };
+    });
+  }
+
+  function handleIncrement(sides: DieSides) {
+    updateEntry(sides, (entry) => ({ ...entry, count: entry.count + 1 }));
+  }
+
+  function handleDecrement(sides: DieSides) {
+    updateEntry(sides, (entry) => ({ ...entry, count: Math.max(0, entry.count - 1) }));
+  }
+
+  function handleRoll() {
+    if (rollState !== "idle" || diceInstances.length === 0) return;
+
+    setRollState("rolling");
     intervalRef.current = setInterval(() => {
-      setFace(rollD6());
+      setFaces(
+        Object.fromEntries(diceInstances.map((die) => [die.key, rollDie(die.sides)])),
+      );
     }, ROLL_TICK_INTERVAL_MS);
 
     timeoutRef.current = setTimeout(() => {
       if (intervalRef.current) clearInterval(intervalRef.current);
-      const finalValue = rollD6();
-      setFace(finalValue);
-      setResult(finalValue);
-      setState("result");
+      const finalFaces = Object.fromEntries(
+        diceInstances.map((die) => [die.key, rollDie(die.sides)]),
+      );
+      setFaces(finalFaces);
+      setResult(Object.values(finalFaces).reduce((sum, value) => sum + value, 0));
+      setRollState("result");
     }, ROLL_ANIMATION_DURATION_MS);
   }
 
-  function handleDismiss() {
+  function handleDismissResult() {
     setResult(null);
-    setState("idle");
+    setRollState("idle");
   }
 
   return (
-    <main className="flex min-h-dvh flex-col">
-      <DropArea value={face} />
+    <div className="flex min-h-dvh flex-col">
+      <TopBar>
+        <HandToggleButton open={handPaneOpen} onClick={handleToggleHandPane} />
+      </TopBar>
 
-      <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10">
-        {state === "result" && result !== null && (
-          <ResultPopup value={result} onDismiss={handleDismiss} />
+      <div className="relative flex flex-1 flex-col overflow-hidden">
+        <DropArea
+          dice={diceInstances.map((die) => ({
+            key: die.key,
+            face: faces[die.key] ?? 1,
+          }))}
+        />
+
+        <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10">
+          {rollState === "result" && result !== null && (
+            <ResultPopup value={result} onDismiss={handleDismissResult} />
+          )}
+          <RollButton disabled={rollState !== "idle" || handPaneOpen} onClick={handleRoll} />
+        </div>
+
+        {handPaneOpen && (
+          <HandPane
+            hand={hand}
+            error={handError}
+            onToggleEnabled={handleToggleEnabled}
+            onIncrement={handleIncrement}
+            onDecrement={handleDecrement}
+          />
         )}
-        <RollButton disabled={state !== "idle"} onClick={handleRoll} />
       </div>
-    </main>
+    </div>
   );
 }

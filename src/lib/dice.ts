@@ -4,7 +4,12 @@ export const ROLL_ANIMATION_DURATION_MS = 500;
 /** How often the die face swaps to a random value while rolling. */
 export const ROLL_TICK_INTERVAL_MS = 90;
 
+/** Rolls a single die with the given number of sides. */
+export function rollDie(sides: number): number {
+  return Math.floor(Math.random() * sides) + 1;
+}
+
 /** Rolls a single six-sided die. */
 export function rollD6(): number {
-  return Math.floor(Math.random() * 6) + 1;
+  return rollDie(6);
 }
