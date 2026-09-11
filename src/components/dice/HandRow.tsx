@@ -1,5 +1,6 @@
 import { Minus, Plus } from "lucide-react";
 import type { HandEntry } from "@/lib/hand";
+import { DieSprite } from "./DieSprite";
 
 type HandRowProps = {
   entry: HandEntry;
@@ -20,6 +21,12 @@ export function HandRow({ entry, onToggleEnabled, onIncrement, onDecrement }: Ha
         onChange={onToggleEnabled}
         aria-label={`Enable d${sides}`}
         className="h-5 w-5 shrink-0 accent-neutral-900 dark:accent-neutral-100"
+      />
+
+      <DieSprite
+        sides={sides}
+        value={1}
+        className={`h-8 w-8 shrink-0 ${enabled ? "" : "opacity-40"}`}
       />
 
       <span
