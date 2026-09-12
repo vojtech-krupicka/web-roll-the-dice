@@ -15,6 +15,13 @@
       "when": 1789205142387,
       "tag": "0001_ambiguous_golden_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789222947060,
+      "tag": "0002_past_robin_chapel",
+      "breakpoints": true
     }
   ]
 }

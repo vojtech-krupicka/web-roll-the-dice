@@ -14,9 +14,11 @@ import {
   updatePlayer,
   updatePlayerHand,
 } from "@/lib/db/players";
+import { createRoll, setRollValidity } from "@/lib/db/rolls";
 import type { HandEntry } from "@/lib/hand";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { toPlayerSummary, type PlayerSummary } from "@/lib/players";
+import { toRollSummary, type RollData, type RollSummary } from "@/lib/rolls";
 import { lockGame, unlockGame } from "@/lib/session";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
@@ -167,5 +169,24 @@ export async function updatePlayerHandAction(
   hand: HandEntry[],
 ): Promise<ActionResult> {
   await updatePlayerHand(playerId, hand);
+  return { ok: true, data: undefined };
+}
+
+// ---- Roll history ----
+
+export async function recordRollAction(
+  hash: string,
+  playerId: number,
+  data: RollData,
+): Promise<ActionResult<{ roll: RollSummary }>> {
+  const game = await findGameByHash(hash);
+  if (!game) return { ok: false, error: "Game not found." };
+
+  const roll = await createRoll({ gameId: game.id, playerId, data });
+  return { ok: true, data: { roll: toRollSummary(roll) } };
+}
+
+export async function setRollValidityAction(rollId: number, isValid: boolean): Promise<ActionResult> {
+  await setRollValidity(rollId, isValid);
   return { ok: true, data: undefined };
 }

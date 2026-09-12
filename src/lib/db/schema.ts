@@ -48,7 +48,34 @@ export const players = pgTable("players", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+export type RollData = {
+  sum: number;
+  /** sides (as a string key) -> the individual values rolled for that type. */
+  roll: Record<string, number[]>;
+  avg: number;
+  median: number;
+  min: number;
+  max: number;
+};
+
+export const rolls = pgTable("rolls", {
+  id: serial("id").primaryKey(),
+  // Denormalized from players.gameId — avoids a join for "all rolls in this
+  // game", and both ids are already known at insert time.
+  gameId: integer("game_id")
+    .notNull()
+    .references(() => games.id, { onDelete: "cascade" }),
+  playerId: integer("player_id")
+    .notNull()
+    .references(() => players.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  isValid: boolean("is_valid").notNull().default(true),
+  data: jsonb("data").$type<RollData>().notNull(),
+});
+
 export type Game = typeof games.$inferSelect;
 export type NewGame = typeof games.$inferInsert;
 export type Player = typeof players.$inferSelect;
 export type NewPlayer = typeof players.$inferInsert;
+export type Roll = typeof rolls.$inferSelect;
+export type NewRoll = typeof rolls.$inferInsert;

@@ -15,8 +15,14 @@ import { GameEditPane } from "@/components/game/GameEditPane";
 import { CurrentPlayerBar } from "@/components/game/CurrentPlayerBar";
 import { PlayersPane } from "@/components/game/PlayersPane";
 import { NextPlayerButton } from "@/components/game/NextPlayerButton";
+import { RollHistoryBar } from "@/components/game/RollHistoryBar";
+import { RollHistoryDialog } from "@/components/game/RollHistoryDialog";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { updatePlayerHandAction, setCurrentPlayerAction } from "@/app/actions";
+import {
+  recordRollAction,
+  setCurrentPlayerAction,
+  updatePlayerHandAction,
+} from "@/app/actions";
 import { ROLL_TICK_INTERVAL_MS, randomRollDuration, rollDie } from "@/lib/dice";
 import {
   DEFAULT_HAND,
@@ -27,6 +33,7 @@ import {
   type HandEntry,
 } from "@/lib/hand";
 import type { PlayerSummary } from "@/lib/players";
+import { computeRollData, type RollSummary } from "@/lib/rolls";
 
 type RollState = "idle" | "rolling" | "result";
 
@@ -36,6 +43,7 @@ type GameViewProps = {
   hasPassword: boolean;
   initialPlayers: PlayerSummary[];
   initialCurrentPlayerId: number;
+  initialRolls: RollSummary[];
 };
 
 export function GameView({
@@ -44,6 +52,7 @@ export function GameView({
   hasPassword: initialHasPassword,
   initialPlayers,
   initialCurrentPlayerId,
+  initialRolls,
 }: GameViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -70,6 +79,13 @@ export function GameView({
   const [nextPlayerConfirmOpen, setNextPlayerConfirmOpen] = useState(false);
 
   const currentPlayer = players.find((p) => p.id === currentPlayerId);
+
+  // ---- Roll history ----
+
+  const [rolls, setRolls] = useState<RollSummary[]>(initialRolls);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const lastRoll = rolls[0];
+  const lastRollPlayer = lastRoll ? players.find((p) => p.id === lastRoll.playerId) : undefined;
 
   // ---- Hand of dice — now per-player, persisted on hand-pane close ----
 
@@ -193,7 +209,7 @@ export function GameView({
       }, ROLL_TICK_INTERVAL_MS);
       timersRef.current.intervals.push(intervalId);
 
-      const timeoutId = setTimeout(() => {
+      const timeoutId = setTimeout(async () => {
         clearInterval(intervalId);
         const finalValue = rollDie(die.sides);
         finalFaces[die.key] = finalValue;
@@ -201,8 +217,18 @@ export function GameView({
 
         settledCount += 1;
         if (settledCount === diceInstances.length) {
-          setResult(Object.values(finalFaces).reduce((sum, value) => sum + value, 0));
+          const rollData = computeRollData(
+            diceInstances.map((d) => ({ sides: d.sides, value: finalFaces[d.key] })),
+          );
+          setResult(rollData.sum);
           setRollState("result");
+
+          if (currentPlayer) {
+            const response = await recordRollAction(hash, currentPlayer.id, rollData);
+            if (response.ok) {
+              setRolls((prev) => [response.data.roll, ...prev]);
+            }
+          }
         }
       }, randomRollDuration());
       timersRef.current.timeouts.push(timeoutId);
@@ -275,6 +301,12 @@ export function GameView({
         )}
       </div>
 
+      <RollHistoryBar
+        lastRoll={lastRoll}
+        lastRollPlayer={lastRollPlayer}
+        onClick={() => setHistoryOpen(true)}
+      />
+
       {welcomeOpen && <GameHashDialog hash={hash} onDismiss={() => setWelcomeOpen(false)} />}
 
       {editOpen && (
@@ -306,6 +338,15 @@ export function GameView({
           confirmLabel="Switch"
           onConfirm={handleNextPlayerConfirmed}
           onCancel={() => setNextPlayerConfirmOpen(false)}
+        />
+      )}
+
+      {historyOpen && (
+        <RollHistoryDialog
+          rolls={rolls}
+          players={players}
+          onRollsChange={setRolls}
+          onDismiss={() => setHistoryOpen(false)}
         />
       )}
     </div>
