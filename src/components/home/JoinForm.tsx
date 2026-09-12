@@ -79,7 +79,7 @@ export function JoinForm({ initialHash = "" }: JoinFormProps) {
           <button
             type="button"
             onClick={handleJoin}
-            disabled={pending || !hash.trim()}
+            disabled={pending || hash.trim().length !== 5}
             className="rounded-xl bg-neutral-900 px-5 py-3 font-semibold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
           >
             Join
@@ -95,14 +95,23 @@ export function JoinForm({ initialHash = "" }: JoinFormProps) {
             placeholder="Password"
             className={inputClass}
           />
-          <button
-            type="button"
-            onClick={handleConfirmPassword}
-            disabled={pending || !password}
-            className="rounded-xl bg-neutral-900 px-5 py-3 font-semibold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
-          >
-            Confirm
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => resetToHashStage(hash)}
+              className="flex-1 rounded-xl border border-neutral-300 px-5 py-3 font-semibold transition hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmPassword}
+              disabled={pending || !password}
+              className="flex-1 rounded-xl bg-neutral-900 px-5 py-3 font-semibold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
+            >
+              Confirm
+            </button>
+          </div>
         </div>
       )}
 
