@@ -1,6 +1,8 @@
 type NumberDieFaceProps = {
   sides: number;
   value: number;
+  /** When set, tints the die in this color instead of the neutral palette. */
+  color?: string;
   className?: string;
 };
 
@@ -29,9 +31,13 @@ const LABEL_Y: Record<number, number> = {
  * A die face for any non-d6, non-coin type (d4/d8/d10/d12/d20/d100) —
  * shaped like the die it represents, with the rolled number printed on it.
  */
-export function NumberDieFace({ sides, value, className }: NumberDieFaceProps) {
+export function NumberDieFace({ sides, value, color, className }: NumberDieFaceProps) {
   const points = SHAPE_POINTS[sides];
   const labelY = LABEL_Y[sides] ?? 52;
+  const shapeStyle = color ? { fill: color, stroke: "rgba(0,0,0,0.25)" } : undefined;
+  const shapeClass = color
+    ? undefined
+    : "fill-white stroke-neutral-300 dark:fill-neutral-800 dark:stroke-neutral-600";
 
   return (
     <svg
@@ -41,30 +47,17 @@ export function NumberDieFace({ sides, value, className }: NumberDieFaceProps) {
       aria-label={`d${sides} showing ${value}`}
     >
       {points ? (
-        <polygon
-          points={points}
-          strokeWidth="2"
-          strokeLinejoin="round"
-          className="fill-white stroke-neutral-300 dark:fill-neutral-800 dark:stroke-neutral-600"
-        />
+        <polygon points={points} strokeWidth="2" strokeLinejoin="round" style={shapeStyle} className={shapeClass} />
       ) : (
-        <rect
-          x="4"
-          y="4"
-          width="92"
-          height="92"
-          rx="16"
-          strokeWidth="2"
-          className="fill-white stroke-neutral-300 dark:fill-neutral-800 dark:stroke-neutral-600"
-        />
+        <rect x="4" y="4" width="92" height="92" rx="16" strokeWidth="2" style={shapeStyle} className={shapeClass} />
       )}
       <text
         x="50"
         y={labelY}
         textAnchor="middle"
         dominantBaseline="central"
-        style={{ fontSize: sides >= 100 ? 26 : 32 }}
-        className="fill-neutral-900 font-bold tabular-nums dark:fill-neutral-100"
+        style={{ fontSize: sides >= 100 ? 26 : 32, ...(color ? { fill: "white" } : undefined) }}
+        className={color ? "font-bold tabular-nums" : "fill-neutral-900 font-bold tabular-nums dark:fill-neutral-100"}
       >
         {value}
       </text>

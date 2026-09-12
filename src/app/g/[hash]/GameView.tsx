@@ -12,6 +12,11 @@ import { SettingsButton } from "@/components/game/SettingsButton";
 import { SettingsMenu } from "@/components/game/SettingsMenu";
 import { GameHashDialog } from "@/components/game/GameHashDialog";
 import { GameEditPane } from "@/components/game/GameEditPane";
+import { CurrentPlayerBar } from "@/components/game/CurrentPlayerBar";
+import { PlayersPane } from "@/components/game/PlayersPane";
+import { NextPlayerButton } from "@/components/game/NextPlayerButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { updatePlayerHandAction, setCurrentPlayerAction } from "@/app/actions";
 import { ROLL_TICK_INTERVAL_MS, randomRollDuration, rollDie } from "@/lib/dice";
 import {
   DEFAULT_HAND,
@@ -21,6 +26,7 @@ import {
   type DieSides,
   type HandEntry,
 } from "@/lib/hand";
+import type { PlayerSummary } from "@/lib/players";
 
 type RollState = "idle" | "rolling" | "result";
 
@@ -28,9 +34,17 @@ type GameViewProps = {
   hash: string;
   initialName: string;
   hasPassword: boolean;
+  initialPlayers: PlayerSummary[];
+  initialCurrentPlayerId: number;
 };
 
-export function GameView({ hash, initialName, hasPassword: initialHasPassword }: GameViewProps) {
+export function GameView({
+  hash,
+  initialName,
+  hasPassword: initialHasPassword,
+  initialPlayers,
+  initialCurrentPlayerId,
+}: GameViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -48,9 +62,21 @@ export function GameView({ hash, initialName, hasPassword: initialHasPassword }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ---- Hand of dice (unchanged from phase02) ----
+  // ---- Players ----
 
-  const [hand, setHand] = useState<HandEntry[]>(DEFAULT_HAND);
+  const [players, setPlayers] = useState<PlayerSummary[]>(initialPlayers);
+  const [currentPlayerId, setCurrentPlayerId] = useState(initialCurrentPlayerId);
+  const [playersPaneOpen, setPlayersPaneOpen] = useState(false);
+  const [nextPlayerConfirmOpen, setNextPlayerConfirmOpen] = useState(false);
+
+  const currentPlayer = players.find((p) => p.id === currentPlayerId);
+
+  // ---- Hand of dice — now per-player, persisted on hand-pane close ----
+
+  const [hand, setHand] = useState<HandEntry[]>(() => {
+    const initialHand = initialPlayers.find((p) => p.id === initialCurrentPlayerId)?.currentHand;
+    return initialHand && initialHand.length > 0 ? initialHand : DEFAULT_HAND;
+  });
   const [handPaneOpen, setHandPaneOpen] = useState(false);
   const [handError, setHandError] = useState<string | null>(null);
 
@@ -75,6 +101,33 @@ export function GameView({ hash, initialName, hasPassword: initialHasPassword }:
     return () => clearRollTimers();
   }, []);
 
+  function switchToPlayer(playerId: number) {
+    const target = players.find((p) => p.id === playerId);
+    if (!target) return;
+
+    clearRollTimers();
+    setCurrentPlayerId(playerId);
+    setHand(target.currentHand.length > 0 ? target.currentHand : DEFAULT_HAND);
+    setFaces({});
+    setResult(null);
+    setRollState("idle");
+    setHandError(null);
+
+    void setCurrentPlayerAction(hash, playerId);
+  }
+
+  function handleNextPlayer() {
+    if (players.length <= 1) return;
+    setNextPlayerConfirmOpen(true);
+  }
+
+  function handleNextPlayerConfirmed() {
+    const currentIndex = players.findIndex((p) => p.id === currentPlayerId);
+    const nextIndex = (currentIndex + 1) % players.length;
+    switchToPlayer(players[nextIndex].id);
+    setNextPlayerConfirmOpen(false);
+  }
+
   function handleToggleHandPane() {
     if (!handPaneOpen) {
       clearRollTimers();
@@ -90,9 +143,17 @@ export function GameView({ hash, initialName, hasPassword: initialHasPassword }:
       return;
     }
 
-    setHand((prev) => pruneEmptyEnabledEntries(prev));
+    const pruned = pruneEmptyEnabledEntries(hand);
+    setHand(pruned);
     setHandError(null);
     setHandPaneOpen(false);
+
+    if (currentPlayer) {
+      setPlayers((prev) =>
+        prev.map((p) => (p.id === currentPlayer.id ? { ...p, currentHand: pruned } : p)),
+      );
+      void updatePlayerHandAction(currentPlayer.id, pruned);
+    }
   }
 
   function updateEntry(sides: DieSides, update: (entry: HandEntry) => HandEntry) {
@@ -118,7 +179,7 @@ export function GameView({ hash, initialName, hasPassword: initialHasPassword }:
   }
 
   function handleRoll() {
-    if (rollState !== "idle" || diceInstances.length === 0) return;
+    if (rollState !== "idle" || diceInstances.length === 0 || !currentPlayer?.enabled) return;
 
     clearRollTimers();
     setRollState("rolling");
@@ -176,6 +237,8 @@ export function GameView({ hash, initialName, hasPassword: initialHasPassword }:
         right={<HandToggleButton open={handPaneOpen} onClick={handleToggleHandPane} />}
       />
 
+      <CurrentPlayerBar player={currentPlayer} onClick={() => setPlayersPaneOpen(true)} />
+
       <div className="relative flex flex-1 flex-col overflow-hidden">
         <DropArea
           dice={diceInstances.map((die) => ({
@@ -183,18 +246,26 @@ export function GameView({ hash, initialName, hasPassword: initialHasPassword }:
             sides: die.sides,
             face: faces[die.key] ?? 1,
           }))}
+          color={currentPlayer?.color}
         />
 
-        <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 pb-10">
           {rollState === "result" && result !== null && (
             <ResultPopup value={result} onDismiss={handleDismissResult} />
           )}
-          <RollButton disabled={rollState !== "idle" || handPaneOpen} onClick={handleRoll} />
+          <div className="flex w-full max-w-sm items-stretch gap-3">
+            <RollButton
+              disabled={rollState !== "idle" || handPaneOpen || !currentPlayer?.enabled}
+              onClick={handleRoll}
+            />
+            <NextPlayerButton disabled={players.length <= 1} onClick={handleNextPlayer} />
+          </div>
         </div>
 
         {handPaneOpen && (
           <HandPane
             hand={hand}
+            color={currentPlayer?.color}
             error={handError}
             onToggleEnabled={handleToggleEnabled}
             onIncrement={handleIncrement}
@@ -214,6 +285,27 @@ export function GameView({ hash, initialName, hasPassword: initialHasPassword }:
           onNameChange={setName}
           onPasswordChanged={() => setHasPassword(true)}
           onDismiss={() => setEditOpen(false)}
+        />
+      )}
+
+      {playersPaneOpen && (
+        <PlayersPane
+          hash={hash}
+          players={players}
+          currentPlayerId={currentPlayerId}
+          onPlayersChange={setPlayers}
+          onSwitchPlayer={switchToPlayer}
+          onDismiss={() => setPlayersPaneOpen(false)}
+        />
+      )}
+
+      {nextPlayerConfirmOpen && (
+        <ConfirmDialog
+          title="Switch player?"
+          message="Move on to the next player?"
+          confirmLabel="Switch"
+          onConfirm={handleNextPlayerConfirmed}
+          onCancel={() => setNextPlayerConfirmOpen(false)}
         />
       )}
     </div>

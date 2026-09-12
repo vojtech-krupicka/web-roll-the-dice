@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "./client";
 import { games, players, type Game } from "./schema";
 import { generateGameHash } from "@/lib/gameHash";
+import { DEFAULT_HAND } from "@/lib/hand";
 
 const MAX_HASH_ATTEMPTS = 5;
 
@@ -40,7 +41,7 @@ export async function createGameWithDefaultPlayer({
 
     const [defaultPlayer] = await tx
       .insert(players)
-      .values({ gameId: game.id, name: "Player #1" })
+      .values({ gameId: game.id, name: "Player #1", order: 0, currentHand: DEFAULT_HAND })
       .returning();
 
     [game] = await tx
@@ -76,4 +77,11 @@ export async function updateGame({ id, name, passwordHash }: UpdateGameInput): P
 
 export async function deleteGame(id: number): Promise<void> {
   await db.delete(games).where(eq(games.id, id));
+}
+
+export async function updateGameCurrentPlayer(gameId: number, playerId: number): Promise<void> {
+  await db
+    .update(games)
+    .set({ currentPlayerId: playerId, lastModified: new Date() })
+    .where(eq(games.id, gameId));
 }

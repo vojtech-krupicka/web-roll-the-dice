@@ -1,7 +1,9 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { findGameByHash } from "@/lib/db/games";
+import { listPlayersForGame } from "@/lib/db/players";
 import { isGameUnlocked } from "@/lib/session";
+import { toPlayerSummary } from "@/lib/players";
 import { GameView } from "./GameView";
 
 type GamePageProps = {
@@ -20,9 +22,18 @@ export default async function GamePage({ params }: GamePageProps) {
     redirect(`/?hash=${game.hash}`);
   }
 
+  const players = (await listPlayersForGame(game.id)).map(toPlayerSummary);
+  const currentPlayerId = players.find((p) => p.id === game.currentPlayerId)?.id ?? players[0].id;
+
   return (
     <Suspense>
-      <GameView hash={game.hash} initialName={game.name} hasPassword={game.passwordHash !== null} />
+      <GameView
+        hash={game.hash}
+        initialName={game.name}
+        hasPassword={game.passwordHash !== null}
+        initialPlayers={players}
+        initialCurrentPlayerId={currentPlayerId}
+      />
     </Suspense>
   );
 }

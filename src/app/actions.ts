@@ -1,7 +1,22 @@
 "use server";
 
-import { createGameWithDefaultPlayer, deleteGame, findGameByHash, updateGame } from "@/lib/db/games";
+import {
+  createGameWithDefaultPlayer,
+  deleteGame,
+  findGameByHash,
+  updateGame,
+  updateGameCurrentPlayer,
+} from "@/lib/db/games";
+import {
+  createPlayer,
+  listPlayersForGame,
+  reorderPlayers,
+  updatePlayer,
+  updatePlayerHand,
+} from "@/lib/db/players";
+import type { HandEntry } from "@/lib/hand";
 import { hashPassword, verifyPassword } from "@/lib/password";
+import { toPlayerSummary, type PlayerSummary } from "@/lib/players";
 import { lockGame, unlockGame } from "@/lib/session";
 
 type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
@@ -93,5 +108,64 @@ export async function deleteGameAction(hash: string, password: string): Promise<
 export async function leaveGameAction(hash: string): Promise<ActionResult> {
   const game = await findGameByHash(hash);
   if (game) await lockGame(game.id);
+  return { ok: true, data: undefined };
+}
+
+// ---- Players ----
+
+type PlayerFormInput = { name: string; color: string; icon: string; enabled: boolean };
+
+export async function addPlayerAction(
+  hash: string,
+  input: PlayerFormInput,
+): Promise<ActionResult<{ player: PlayerSummary }>> {
+  const game = await findGameByHash(hash);
+  if (!game) return { ok: false, error: "Game not found." };
+
+  const trimmedName = input.name.trim();
+  if (!trimmedName) return { ok: false, error: "Give the player a name." };
+
+  const existing = await listPlayersForGame(game.id);
+  const player = await createPlayer({
+    gameId: game.id,
+    name: trimmedName,
+    color: input.color,
+    icon: input.icon,
+    enabled: input.enabled,
+    order: existing.length,
+  });
+
+  return { ok: true, data: { player: toPlayerSummary(player) } };
+}
+
+export async function updatePlayerAction(
+  playerId: number,
+  input: PlayerFormInput,
+): Promise<ActionResult> {
+  const trimmedName = input.name.trim();
+  if (!trimmedName) return { ok: false, error: "Give the player a name." };
+
+  await updatePlayer(playerId, { ...input, name: trimmedName });
+  return { ok: true, data: undefined };
+}
+
+export async function reorderPlayersAction(orderedIds: number[]): Promise<ActionResult> {
+  await reorderPlayers(orderedIds);
+  return { ok: true, data: undefined };
+}
+
+export async function setCurrentPlayerAction(hash: string, playerId: number): Promise<ActionResult> {
+  const game = await findGameByHash(hash);
+  if (!game) return { ok: false, error: "Game not found." };
+
+  await updateGameCurrentPlayer(game.id, playerId);
+  return { ok: true, data: undefined };
+}
+
+export async function updatePlayerHandAction(
+  playerId: number,
+  hand: HandEntry[],
+): Promise<ActionResult> {
+  await updatePlayerHand(playerId, hand);
   return { ok: true, data: undefined };
 }

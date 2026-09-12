@@ -4,13 +4,14 @@ import { DieSprite } from "./DieSprite";
 
 type HandRowProps = {
   entry: HandEntry;
+  color?: string;
   onToggleEnabled: () => void;
   onIncrement: () => void;
   onDecrement: () => void;
 };
 
 /** One row in the Hand pane: enable checkbox, die type, and a +/- count control. */
-export function HandRow({ entry, onToggleEnabled, onIncrement, onDecrement }: HandRowProps) {
+export function HandRow({ entry, color, onToggleEnabled, onIncrement, onDecrement }: HandRowProps) {
   const { sides, enabled, count } = entry;
 
   return (
@@ -26,6 +27,7 @@ export function HandRow({ entry, onToggleEnabled, onIncrement, onDecrement }: Ha
       <DieSprite
         sides={sides}
         value={1}
+        color={enabled ? color : undefined}
         className={`h-8 w-8 shrink-0 ${enabled ? "" : "opacity-40"}`}
       />
 

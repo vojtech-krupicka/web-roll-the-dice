@@ -8,6 +8,13 @@
       "when": 1789167629950,
       "tag": "0000_same_chronomancer",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789205142387,
+      "tag": "0001_ambiguous_golden_guardian",
+      "breakpoints": true
     }
   ]
 }
