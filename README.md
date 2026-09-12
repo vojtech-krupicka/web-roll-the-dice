@@ -9,14 +9,22 @@ Built in short, incremental phases — see [CHANGELOG.md](CHANGELOG.md) for the 
 - [Next.js](https://nextjs.org/) (App Router, TypeScript)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [lucide-react](https://lucide.dev/) for icons
-- Postgres + [Drizzle ORM](https://orm.drizzle.team/) (planned, from phase 02 onward)
+- Postgres + [Drizzle ORM](https://orm.drizzle.team/)
+- [iron-session](https://github.com/vvo/iron-session) (game passwords) + [bcryptjs](https://github.com/dcodeIO/bcrypt.js) (password hashing)
+- [@dnd-kit](https://dndkit.com/) (drag-to-reorder players)
 
 ## Getting started
 
-Requires [Node.js](https://nodejs.org/) (LTS).
+Requires [Node.js](https://nodejs.org/) (LTS) and a local Postgres instance.
 
 ```bash
+# Postgres (once)
+docker run --name dice-pg -e POSTGRES_PASSWORD=dev -p 5432:5432 -d postgres:17
+
+# App
+cp .env.example .env   # fill in DATABASE_URL / SESSION_SECRET
 npm install
+npm run db:migrate
 npm run dev
 ```
 
@@ -43,3 +51,12 @@ Each phase is a small, self-contained iteration, merged to `main` and tagged on 
 - Drop area renders every die in the hand, each labeled with its type, instead of just one d6
 - Distinct shape per die type (pip d6, coin, triangle/diamond/kite/pentagon/hexagon/octagon) so a mixed hand is recognizable at a glance
 - Rolling covers the whole hand: each die animates for its own random duration (0.5–2s) and settles independently; the result popup shows the total once every die has stopped
+
+### Phase 03 — Games, players, and roll history
+
+- Everything now persists to Postgres: games, players, and every roll
+- Main page: join a game by its 5-character hash (protected games prompt once for a password), or create a new one (name + optional password)
+- A game's top bar gains a Settings menu (Leave game / Legend / About) and a clickable name opening rename, password-change, delete, and leave controls
+- Multiple players per game: add/edit with a name, a color (auto-distinct, randomly assigned, from a curated palette), and an icon; drag to reorder; enable/disable a player
+- A player bar under the top bar shows who's active and opens the player list; switching players (via "Next player" or picking one from the list, both confirmed) swaps in that player's own saved hand and tints the dice in their color
+- A footer bar shows the latest roll and opens the full roll history — every roll's sum, per-die breakdown, average, median, min, and max, with a checkbox to mark a roll invalid without deleting it
