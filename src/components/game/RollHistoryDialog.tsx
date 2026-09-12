@@ -23,7 +23,7 @@ export function RollHistoryDialog({ rolls, players, onRollsChange, onDismiss }: 
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-background px-6 py-4">
-      <div className="flex items-center justify-between">
+      <div className="flex shrink-0 items-center justify-between">
         <h2 className="text-sm font-semibold tracking-wide text-neutral-500 uppercase dark:text-neutral-400">
           Roll history
         </h2>
@@ -40,7 +40,7 @@ export function RollHistoryDialog({ rolls, players, onRollsChange, onDismiss }: 
       {rolls.length === 0 ? (
         <p className="mt-8 text-center text-sm text-neutral-500 dark:text-neutral-400">No rolls yet.</p>
       ) : (
-        <div className="mt-4 flex flex-col overflow-hidden rounded-xl">
+        <div className="mt-4 flex flex-col">
           {rolls.map((roll, index) => (
             <RollHistoryRow
               key={roll.id}

@@ -133,6 +133,9 @@ export function PlayersPane({
           mode={form.mode}
           initial={form.mode === "edit" ? form.player : undefined}
           defaultName={`Player #${players.length + 1}`}
+          usedColors={players
+            .filter((p) => !(form.mode === "edit" && p.id === form.player.id))
+            .map((p) => p.color)}
           onSubmit={handleFormSubmit}
           onDismiss={() => setForm(null)}
         />

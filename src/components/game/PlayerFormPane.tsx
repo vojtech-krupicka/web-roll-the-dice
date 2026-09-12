@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X } from "lucide-react";
-import { PLAYER_COLORS, PLAYER_ICONS } from "@/lib/playerColors";
+import { PLAYER_COLORS, PLAYER_ICONS, pickRandomAvailableColor } from "@/lib/playerColors";
 
 export type PlayerFormValues = {
   name: string;
@@ -15,14 +15,23 @@ type PlayerFormPaneProps = {
   mode: "add" | "edit";
   initial?: PlayerFormValues;
   defaultName: string;
+  /** Colors already in use by other players — disabled in the picker. */
+  usedColors: string[];
   onSubmit: (values: PlayerFormValues) => void | Promise<void>;
   onDismiss: () => void;
 };
 
 /** Add/edit form for a player: name, color, icon, enabled. */
-export function PlayerFormPane({ mode, initial, defaultName, onSubmit, onDismiss }: PlayerFormPaneProps) {
+export function PlayerFormPane({
+  mode,
+  initial,
+  defaultName,
+  usedColors,
+  onSubmit,
+  onDismiss,
+}: PlayerFormPaneProps) {
   const [name, setName] = useState(initial?.name ?? defaultName);
-  const [color, setColor] = useState(initial?.color ?? PLAYER_COLORS[0]);
+  const [color, setColor] = useState(() => initial?.color ?? pickRandomAvailableColor(usedColors));
   const [icon, setIcon] = useState(initial?.icon ?? PLAYER_ICONS[0]);
   const [enabled, setEnabled] = useState(initial?.enabled ?? true);
   const [pending, setPending] = useState(false);
@@ -68,21 +77,26 @@ export function PlayerFormPane({ mode, initial, defaultName, onSubmit, onDismiss
           <div>
             <p className="mb-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">Color</p>
             <div className="flex flex-wrap gap-2">
-              {PLAYER_COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  aria-label={c}
-                  aria-pressed={color === c}
-                  className={`h-9 w-9 rounded-full transition ${
-                    color === c
-                      ? "ring-2 ring-neutral-900 ring-offset-2 ring-offset-white dark:ring-neutral-100 dark:ring-offset-neutral-950"
-                      : ""
-                  }`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
+              {PLAYER_COLORS.map((c) => {
+                const taken = usedColors.includes(c) && c !== color;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setColor(c)}
+                    disabled={taken}
+                    title={taken ? "Already used by another player" : undefined}
+                    aria-label={c}
+                    aria-pressed={color === c}
+                    className={`h-9 w-9 rounded-full transition disabled:cursor-not-allowed disabled:opacity-25 ${
+                      color === c
+                        ? "ring-2 ring-neutral-900 ring-offset-2 ring-offset-white dark:ring-neutral-100 dark:ring-offset-neutral-950"
+                        : ""
+                    }`}
+                    style={{ backgroundColor: c }}
+                  />
+                );
+              })}
             </div>
           </div>
 

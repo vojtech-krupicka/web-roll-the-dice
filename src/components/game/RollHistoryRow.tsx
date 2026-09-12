@@ -60,7 +60,11 @@ export function RollHistoryRow({ roll, player, striped, onToggleValid }: RollHis
             {parts.map((part, index) => (
               <span key={index}>
                 {index > 0 && <span className="mx-1 text-neutral-400 dark:text-neutral-600">+</span>}
-                <span className={part.isMin || part.isMax ? "font-bold" : ""}>
+                <span
+                  className={
+                    part.isMin || part.isMax ? "text-blue-600 dark:text-blue-400" : undefined
+                  }
+                >
                   d{part.sides}({part.value})
                 </span>
               </span>
