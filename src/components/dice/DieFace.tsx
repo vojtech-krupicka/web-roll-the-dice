@@ -1,5 +1,7 @@
 type DieFaceProps = {
   value: number;
+  /** When set, tints the die in this color instead of the neutral palette. */
+  color?: string;
   className?: string;
 };
 
@@ -25,7 +27,7 @@ const FACE_LAYOUT: Record<number, PipKey[]> = {
 };
 
 /** A single d6 face, rendered as an SVG pip layout (1–6). */
-export function DieFace({ value, className }: DieFaceProps) {
+export function DieFace({ value, color, className }: DieFaceProps) {
   const pips = FACE_LAYOUT[value] ?? [];
 
   return (
@@ -42,7 +44,8 @@ export function DieFace({ value, className }: DieFaceProps) {
         height="92"
         rx="16"
         strokeWidth="2"
-        className="fill-white stroke-neutral-300 dark:fill-neutral-800 dark:stroke-neutral-600"
+        style={color ? { fill: color, stroke: "rgba(0,0,0,0.25)" } : undefined}
+        className={color ? undefined : "fill-white stroke-neutral-300 dark:fill-neutral-800 dark:stroke-neutral-600"}
       />
       {pips.map((key) => {
         const [cx, cy] = PIP_POSITIONS[key];
@@ -52,7 +55,8 @@ export function DieFace({ value, className }: DieFaceProps) {
             cx={cx}
             cy={cy}
             r="8"
-            className="fill-neutral-900 dark:fill-neutral-100"
+            style={color ? { fill: "white" } : undefined}
+            className={color ? undefined : "fill-neutral-900 dark:fill-neutral-100"}
           />
         );
       })}

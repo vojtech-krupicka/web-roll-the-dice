@@ -6,6 +6,7 @@ import { AddDiePopup } from "./AddDiePopup";
 
 type HandPaneProps = {
   hand: HandEntry[];
+  color?: string;
   error: string | null;
   onToggleEnabled: (sides: DieSides) => void;
   onIncrement: (sides: DieSides) => void;
@@ -16,6 +17,7 @@ type HandPaneProps = {
 /** Overlay panel for editing the current hand — covers the drop area while open. */
 export function HandPane({
   hand,
+  color,
   error,
   onToggleEnabled,
   onIncrement,
@@ -36,6 +38,7 @@ export function HandPane({
           <HandRow
             key={entry.sides}
             entry={entry}
+            color={color}
             onToggleEnabled={() => onToggleEnabled(entry.sides)}
             onIncrement={() => onIncrement(entry.sides)}
             onDecrement={() => onDecrement(entry.sides)}

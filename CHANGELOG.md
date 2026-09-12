@@ -6,6 +6,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ins
 
 ## [Unreleased]
 
+## [phase03] - 2026-09-13
+
+### Added
+
+- Postgres persistence (Drizzle ORM): `games`, `players`, and `rolls` tables, migrated with drizzle-kit
+- Home page rebuilt as a join/create screen: join an existing game by its 5-character hash (protected games prompt once for a password, with Cancel to back out), or create a new game (name + optional password)
+- Password-protected games are gated by a signed iron-session cookie; a "here's your hash" dialog appears once after joining/creating
+- Game top bar: a Settings menu (Leave game / Legend / About, anchored under the cog button) and a clickable game name opening rename, password-change, delete-game (password + confirmation), and leave-game controls
+- Multiple players per game, each with a name, a color (8-color palette, randomly assigned and kept distinct across players; the first auto-created player gets a neutral gray outside that palette), an icon, and an enabled flag; a Players pane lists them with drag-to-reorder
+- A player bar shows the current player and opens the Players pane; "Next player" (confirmed) cycles forward, picking a specific player from the pane (also confirmed) is the only way to go backward
+- Each player's hand is now saved separately and restored when switching to them; dice are tinted in the current player's color throughout
+- Roll history: every roll is recorded with its sum, per-die breakdown, average, median, min, and max; a footer bar shows the latest roll and opens the full history, where a checkbox marks a roll invalid (grayed out, struck through) without deleting it
+
 ## [phase02] - 2026-09-11
 
 ### Added
@@ -30,6 +43,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ins
 - Roll button with a ~500ms random face-swap animation, settling on a `Math.random()` result
 - Result popup shown in front of the Roll button; dismissible with any click, which re-enables the button
 
-[Unreleased]: https://github.com/vojtech-krupicka/web-roll-the-dice/compare/phase02...HEAD
+[Unreleased]: https://github.com/vojtech-krupicka/web-roll-the-dice/compare/phase03...HEAD
+[phase03]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase03
 [phase02]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase02
 [phase01]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase01

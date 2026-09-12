@@ -9,10 +9,12 @@ export type DropAreaDie = {
 
 type DropAreaProps = {
   dice: DropAreaDie[];
+  /** Tints every die in this color — the current player's color. */
+  color?: string;
 };
 
 /** The dice drop-off area — shows every die currently in the hand. */
-export function DropArea({ dice }: DropAreaProps) {
+export function DropArea({ dice, color }: DropAreaProps) {
   return (
     <div className="flex flex-[2] flex-wrap items-center justify-center gap-4 bg-neutral-100 p-6 dark:bg-neutral-900/60">
       {dice.map((die) => (
@@ -23,6 +25,7 @@ export function DropArea({ dice }: DropAreaProps) {
           <DieSprite
             sides={die.sides}
             value={die.face}
+            color={color}
             className="h-24 w-24 drop-shadow-xl sm:h-32 sm:w-32"
           />
         </div>

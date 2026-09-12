@@ -1,0 +1,1 @@
+ALTER TABLE "players" ALTER COLUMN "color" SET DEFAULT '#9ca3af';
