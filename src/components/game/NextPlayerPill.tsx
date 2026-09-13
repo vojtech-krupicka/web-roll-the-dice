@@ -12,7 +12,7 @@ export function NextPlayerPill({ disabled, onClick }: NextPlayerPillProps) {
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="group absolute right-[-16px] bottom-[114px] z-[3] flex h-11 cursor-pointer items-center gap-1.5 rounded-l-full border border-r-0 border-border bg-panel py-2 pr-4 pl-3 shadow-lg transition-colors hover:border-accent-cyan/40 hover:bg-white/5 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:bg-panel disabled:active:scale-100"
+      className="group absolute right-[-16px] bottom-[114px] z-[3] flex h-11 cursor-pointer items-center gap-1.5 rounded-l-full border border-r-0 border-border bg-panel py-2 pr-4 pl-3 shadow-lg transition-colors hover:border-accent-cyan/40 hover:bg-panel-hover active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:bg-panel disabled:active:scale-100"
     >
       <SkipForward
         size={16}

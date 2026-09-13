@@ -6,6 +6,7 @@
   --bg-stop-3: #060710;
 
   --color-panel: #12142a;
+  --color-panel-hover: #1a1c3a;
   --color-panel-inset: #0d0e1e;
   --color-border: #262a45;
   --color-border-strong: #3a3f6e;
@@ -21,6 +22,7 @@
   --color-background: var(--bg-stop-2);
   --color-foreground: var(--color-text);
   --color-panel: var(--color-panel);
+  --color-panel-hover: var(--color-panel-hover);
   --color-panel-inset: var(--color-panel-inset);
   --color-border: var(--color-border);
   --color-border-strong: var(--color-border-strong);
