@@ -149,6 +149,10 @@ export function GameView({
   }
 
   function handleNextPlayer() {
+    if (rollState === "result") {
+      setResult(null);
+      setRollState("idle");
+    }
     if (players.length <= 1) return;
     setNextPlayerConfirmOpen(true);
   }
@@ -356,22 +360,19 @@ export function GameView({
             settled: rollState !== "rolling" || settled[die.key] === true,
           }))}
           color={currentPlayer?.color}
+          blurred={resultShowing}
         />
 
         <div className={dimWhenResult}>
           <CurrentPlayerBadge player={currentPlayer} onClick={() => setEditPlayerOpen(true)} />
         </div>
 
-        <div className={dimWhenResult}>
-          <RollHistoryPill
-            lastRoll={lastRoll}
-            lastRollPlayer={lastRollPlayer}
-            onClick={() => setHistoryOpen(true)}
-          />
-        </div>
-        <div className={dimWhenResult}>
-          <NextPlayerPill disabled={players.length <= 1} onClick={handleNextPlayer} />
-        </div>
+        <RollHistoryPill
+          lastRoll={lastRoll}
+          lastRollPlayer={lastRollPlayer}
+          onClick={() => setHistoryOpen(true)}
+        />
+        <NextPlayerPill disabled={players.length <= 1} onClick={handleNextPlayer} />
 
         <BottomBar active={activeDialog} onPlayers={goToPlayers} onHand={goToHand} />
 

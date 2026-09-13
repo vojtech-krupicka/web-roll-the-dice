@@ -13,6 +13,8 @@ type DropAreaProps = {
   dice: DropAreaDie[];
   /** Tints every die in this color — the current player's color. */
   color?: string;
+  /** Blurs the whole area — used while the result banner is showing. */
+  blurred?: boolean;
 };
 
 const SIZE_CLASS: Partial<Record<DieSides, string>> = {
@@ -24,9 +26,13 @@ const SIZE_CLASS: Partial<Record<DieSides, string>> = {
 const DEFAULT_SIZE_CLASS = "h-[60px] w-[60px]";
 
 /** The dice drop-off area — dark panel + grid backdrop, dice clustered and vertically centered. */
-export function DropArea({ dice, color }: DropAreaProps) {
+export function DropArea({ dice, color, blurred }: DropAreaProps) {
   return (
-    <div className="absolute inset-0 z-[1] overflow-hidden rounded-[20px] border border-border bg-panel-inset">
+    <div
+      className={`absolute inset-0 z-[1] overflow-hidden rounded-[20px] border border-border bg-panel-inset transition-[filter] duration-300 ${
+        blurred ? "blur-md" : ""
+      }`}
+    >
       <div
         className="absolute inset-0"
         style={{
