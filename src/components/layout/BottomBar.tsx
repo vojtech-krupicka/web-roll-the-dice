@@ -43,9 +43,11 @@ function NavButton({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex flex-col items-center gap-1.5 transition ${active ? "text-accent-cyan" : "text-muted"}`}
+      className={`group flex flex-col items-center gap-1.5 rounded-xl px-3 py-1.5 transition hover:bg-white/5 active:scale-95 ${
+        active ? "text-accent-cyan" : "text-muted hover:text-[#cbd5e1]"
+      }`}
     >
-      {icon}
+      <span className="inline-flex transition-transform duration-150 group-hover:scale-110">{icon}</span>
       <span className="text-[10px] font-semibold">{label}</span>
     </button>
   );
