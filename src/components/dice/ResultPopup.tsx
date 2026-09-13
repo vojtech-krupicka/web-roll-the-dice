@@ -33,7 +33,7 @@ export function ResultPopup({ playerName, playerColor, dice, sum, avg, median, m
   }, []);
 
   return (
-    <div className="absolute inset-x-[-16px] top-0 z-[6] overflow-hidden border-y border-border bg-panel-inset">
+    <div className="absolute inset-x-[-16px] top-1/2 z-[6] -translate-y-1/2 overflow-hidden border-y border-border bg-panel-inset">
       <div
         className={`flex flex-col items-center px-6 pt-6 pb-5 text-center transition-all duration-300 ease-out ${
           entered ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"
