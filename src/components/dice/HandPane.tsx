@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DIE_TYPES, type DieSides, type HandEntry } from "@/lib/hand";
+import { DIE_TYPES, activeDiceCount, type DieSides, type HandEntry } from "@/lib/hand";
 import { DialogShell, type DialogBottomNav } from "@/components/ui/DialogShell";
 import { HandRow } from "./HandRow";
 import { AddDiePopup } from "./AddDiePopup";
@@ -7,7 +7,6 @@ import { AddDiePopup } from "./AddDiePopup";
 type HandPaneProps = {
   hand: HandEntry[];
   color?: string;
-  error: string | null;
   bottomNav: DialogBottomNav;
   onToggleEnabled: (sides: DieSides) => void;
   onIncrement: (sides: DieSides) => void;
@@ -19,7 +18,6 @@ type HandPaneProps = {
 export function HandPane({
   hand,
   color,
-  error,
   bottomNav,
   onToggleEnabled,
   onIncrement,
@@ -49,6 +47,7 @@ export function HandPane({
       bottomNav={bottomNav}
       onDismiss={bottomNav.onHand}
       onConfirm={bottomNav.onHand}
+      confirmDisabled={activeDiceCount(hand) === 0}
       addAction={allTypesAdded ? undefined : { label: "Add die", onClick: () => setAddDieOpen(true) }}
     >
       <div className="flex flex-col gap-1">
@@ -63,12 +62,6 @@ export function HandPane({
           />
         ))}
       </div>
-
-      {error && (
-        <p role="alert" className="mt-4 text-sm font-medium text-red-400">
-          {error}
-        </p>
-      )}
     </DialogShell>
   );
 }
