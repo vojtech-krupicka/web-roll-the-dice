@@ -15,6 +15,7 @@ import { GameHashDialog } from "@/components/game/GameHashDialog";
 import { GameEditPane } from "@/components/game/GameEditPane";
 import { CurrentPlayerBadge } from "@/components/game/CurrentPlayerBadge";
 import { PlayersPane } from "@/components/game/PlayersPane";
+import { PlayerFormPane, type PlayerFormValues } from "@/components/game/PlayerFormPane";
 import { NextPlayerPill } from "@/components/game/NextPlayerPill";
 import { RollHistoryPill } from "@/components/game/RollHistoryPill";
 import { RollHistoryDialog } from "@/components/game/RollHistoryDialog";
@@ -22,6 +23,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
   recordRollAction,
   setCurrentPlayerAction,
+  updatePlayerAction,
   updatePlayerHandAction,
 } from "@/app/actions";
 import { ROLL_TICK_INTERVAL_MS, randomRollDuration, rollDie } from "@/lib/dice";
@@ -63,6 +65,7 @@ export function GameView({
   const [hasPassword, setHasPassword] = useState(initialHasPassword);
   const [welcomeOpen, setWelcomeOpen] = useState(searchParams.get("welcome") === "1");
   const [editOpen, setEditOpen] = useState(false);
+  const [editPlayerOpen, setEditPlayerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Drop the one-time `?welcome=1` marker from the URL once we've read it.
@@ -214,6 +217,24 @@ export function GameView({
     goToHand();
   }
 
+  function closeEditPlayerThenGoToPlayers() {
+    setEditPlayerOpen(false);
+    goToPlayers();
+  }
+
+  function closeEditPlayerThenGoToHand() {
+    setEditPlayerOpen(false);
+    goToHand();
+  }
+
+  async function handleEditCurrentPlayerSubmit(playerId: number, values: PlayerFormValues) {
+    const result = await updatePlayerAction(playerId, values);
+    if (result.ok) {
+      setPlayers((prev) => prev.map((p) => (p.id === playerId ? { ...p, ...values } : p)));
+    }
+    setEditPlayerOpen(false);
+  }
+
   function updateEntry(sides: DieSides, update: (entry: HandEntry) => HandEntry) {
     setHand((prev) => prev.map((entry) => (entry.sides === sides ? update(entry) : entry)));
   }
@@ -315,7 +336,7 @@ export function GameView({
           color={currentPlayer?.color}
         />
 
-        <CurrentPlayerBadge player={currentPlayer} onClick={() => requestActiveDialog("players")} />
+        <CurrentPlayerBadge player={currentPlayer} onClick={() => setEditPlayerOpen(true)} />
 
         <RollHistoryPill
           lastRoll={lastRoll}
@@ -370,6 +391,22 @@ export function GameView({
           onNameChange={setName}
           onPasswordChanged={() => setHasPassword(true)}
           onDismiss={() => setEditOpen(false)}
+        />
+      )}
+
+      {editPlayerOpen && currentPlayer && (
+        <PlayerFormPane
+          mode="edit"
+          initial={currentPlayer}
+          defaultName={currentPlayer.name}
+          usedColors={players.filter((p) => p.id !== currentPlayer.id).map((p) => p.color)}
+          bottomNav={{
+            active: activeDialog,
+            onPlayers: closeEditPlayerThenGoToPlayers,
+            onHand: closeEditPlayerThenGoToHand,
+          }}
+          onSubmit={(values) => handleEditCurrentPlayerSubmit(currentPlayer.id, values)}
+          onDismiss={() => setEditPlayerOpen(false)}
         />
       )}
 
