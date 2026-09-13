@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { AlignCenter, ChevronsDown, ChevronsUp, Clock, Gauge } from "lucide-react";
+import { useState } from "react";
+import { Clock } from "lucide-react";
 import type { PlayerSummary } from "@/lib/players";
 import type { RollSummary } from "@/lib/rolls";
 import { Switch } from "@/components/ui/Switch";
+import { RollStats } from "./RollStats";
 
 type RollHistoryRowProps = {
   roll: RollSummary;
@@ -68,34 +69,13 @@ export function RollHistoryRow({ roll, player, onToggleValid }: RollHistoryRowPr
             ))}
           </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <Stat icon={<Gauge size={14} aria-hidden="true" />} label="Avg" value={roll.data.avg} />
-            <Stat
-              icon={<AlignCenter size={14} aria-hidden="true" />}
-              label="Median"
-              value={roll.data.median}
-            />
-            <Stat icon={<ChevronsDown size={14} aria-hidden="true" />} label="Min" value={roll.data.min} />
-            <Stat icon={<ChevronsUp size={14} aria-hidden="true" />} label="Max" value={roll.data.max} />
+          <div className="mt-3">
+            <RollStats avg={roll.data.avg} median={roll.data.median} min={roll.data.min} max={roll.data.max} />
           </div>
         </div>
       )}
     </div>
   );
-}
-
-function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
-  return (
-    <div className="flex items-center gap-2 text-muted">
-      {icon}
-      <span>{label}:</span>
-      <span className="font-semibold text-foreground">{formatNumber(value)}</span>
-    </div>
-  );
-}
-
-function formatNumber(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
 type BreakdownPart = { sides: string; value: number; isMin: boolean; isMax: boolean };

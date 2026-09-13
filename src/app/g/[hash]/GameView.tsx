@@ -40,6 +40,17 @@ import { computeRollData, type RollSummary } from "@/lib/rolls";
 type RollState = "idle" | "rolling" | "result";
 type ActiveDialog = "players" | "hand" | null;
 
+type RollResult = {
+  playerName: string;
+  playerColor: string;
+  dice: { key: string; sides: DieSides; value: number }[];
+  sum: number;
+  avg: number;
+  median: number;
+  min: number;
+  max: number;
+};
+
 type GameViewProps = {
   hash: string;
   initialName: string;
@@ -103,7 +114,7 @@ export function GameView({
 
   const [rollState, setRollState] = useState<RollState>("idle");
   const [faces, setFaces] = useState<Record<string, number>>({});
-  const [result, setResult] = useState<number | null>(null);
+  const [result, setResult] = useState<RollResult | null>(null);
   const [settled, setSettled] = useState<Record<string, boolean>>({});
   const timersRef = useRef<{
     intervals: ReturnType<typeof setInterval>[];
@@ -277,7 +288,16 @@ export function GameView({
           const rollData = computeRollData(
             diceInstances.map((d) => ({ sides: d.sides, value: finalFaces[d.key] })),
           );
-          setResult(rollData.sum);
+          setResult({
+            playerName: currentPlayer?.name ?? "Unknown player",
+            playerColor: currentPlayer?.color ?? "#9ca3af",
+            dice: diceInstances.map((d) => ({ key: d.key, sides: d.sides, value: finalFaces[d.key] })),
+            sum: rollData.sum,
+            avg: rollData.avg,
+            median: rollData.median,
+            min: rollData.min,
+            max: rollData.max,
+          });
           setRollState("result");
 
           if (currentPlayer) {
@@ -297,28 +317,35 @@ export function GameView({
     setRollState("idle");
   }
 
+  const resultShowing = rollState === "result";
+  const dimWhenResult = resultShowing
+    ? "pointer-events-none opacity-30 transition-opacity duration-200"
+    : "transition-opacity duration-200";
+
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar
-        left={<LeaveButton hash={hash} />}
-        center={
-          <button
-            type="button"
-            onClick={() => setEditOpen(true)}
-            className="truncate text-sm font-bold"
-          >
-            {name}
-          </button>
-        }
-        right={
-          <div className="relative">
-            <SettingsButton onClick={() => setSettingsOpen(true)} />
-            {settingsOpen && (
-              <SettingsMenu hash={hash} onDismiss={() => setSettingsOpen(false)} />
-            )}
-          </div>
-        }
-      />
+      <div className={dimWhenResult}>
+        <TopBar
+          left={<LeaveButton hash={hash} />}
+          center={
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              className="truncate text-sm font-bold"
+            >
+              {name}
+            </button>
+          }
+          right={
+            <div className="relative">
+              <SettingsButton onClick={() => setSettingsOpen(true)} />
+              {settingsOpen && (
+                <SettingsMenu hash={hash} onDismiss={() => setSettingsOpen(false)} />
+              )}
+            </div>
+          }
+        />
+      </div>
 
       <div className="relative mx-4 mt-[18px] flex-1">
         <DropArea
@@ -331,26 +358,44 @@ export function GameView({
           color={currentPlayer?.color}
         />
 
-        <CurrentPlayerBadge player={currentPlayer} onClick={() => setEditPlayerOpen(true)} />
+        <div className={dimWhenResult}>
+          <CurrentPlayerBadge player={currentPlayer} onClick={() => setEditPlayerOpen(true)} />
+        </div>
 
-        <RollHistoryPill
-          lastRoll={lastRoll}
-          lastRollPlayer={lastRollPlayer}
-          onClick={() => setHistoryOpen(true)}
-        />
-        <NextPlayerPill disabled={players.length <= 1} onClick={handleNextPlayer} />
+        <div className={dimWhenResult}>
+          <RollHistoryPill
+            lastRoll={lastRoll}
+            lastRollPlayer={lastRollPlayer}
+            onClick={() => setHistoryOpen(true)}
+          />
+        </div>
+        <div className={dimWhenResult}>
+          <NextPlayerPill disabled={players.length <= 1} onClick={handleNextPlayer} />
+        </div>
 
-        <BottomBar active={activeDialog} onPlayers={goToPlayers} onHand={goToHand} />
+        <div className={dimWhenResult}>
+          <BottomBar active={activeDialog} onPlayers={goToPlayers} onHand={goToHand} />
+        </div>
+
+        {resultShowing && result && (
+          <ResultPopup
+            playerName={result.playerName}
+            playerColor={result.playerColor}
+            dice={result.dice}
+            sum={result.sum}
+            avg={result.avg}
+            median={result.median}
+            min={result.min}
+            max={result.max}
+          />
+        )}
 
         <RollButton
-          disabled={rollState !== "idle" || activeDialog === "hand" || !currentPlayer?.enabled}
+          disabled={(rollState !== "idle" && !resultShowing) || activeDialog === "hand" || !currentPlayer?.enabled}
           rolling={rollState === "rolling"}
-          onClick={handleRoll}
+          showResult={resultShowing}
+          onClick={resultShowing ? handleDismissResult : handleRoll}
         />
-
-        {rollState === "result" && result !== null && (
-          <ResultPopup value={result} onDismiss={handleDismissResult} />
-        )}
 
         {activeDialog === "hand" && (
           <HandPane

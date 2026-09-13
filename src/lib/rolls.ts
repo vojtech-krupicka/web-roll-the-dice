@@ -42,3 +42,8 @@ export function computeRollData(entries: RollInput[]): RollData {
 
   return { sum, roll, avg, median, min, max };
 }
+
+/** Formats a stat value: integers print bare, non-integers get 2 decimal places. */
+export function formatNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
+}
