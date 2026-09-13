@@ -27,8 +27,8 @@ export function PlayerRow({ player, isCurrent, onToggleEnabled, onEdit, onSelect
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 rounded-2xl border bg-panel px-3 py-2.5 transition ${
-        isCurrent ? "border-accent-cyan/35" : "border-border"
+      className={`flex items-center gap-3 rounded-2xl border px-3 py-2.5 transition ${
+        isCurrent ? "border-accent-cyan/40 bg-accent-cyan/[0.07]" : "border-border bg-panel"
       } ${isDragging ? "z-10 opacity-50" : ""}`}
     >
       <button
@@ -54,7 +54,7 @@ export function PlayerRow({ player, isCurrent, onToggleEnabled, onEdit, onSelect
         type="button"
         onClick={onSelect}
         disabled={isCurrent}
-        className="flex flex-1 items-center gap-2 truncate text-left disabled:cursor-default"
+        className="min-w-0 flex-1 truncate text-left disabled:cursor-default"
       >
         <span
           className="truncate text-[15px] font-bold"
@@ -62,11 +62,6 @@ export function PlayerRow({ player, isCurrent, onToggleEnabled, onEdit, onSelect
         >
           {player.name}
         </span>
-        {isCurrent && (
-          <span className="shrink-0 rounded-full bg-accent-cyan/10 px-2 py-0.5 text-[9px] font-bold tracking-[0.08em] text-accent-cyan">
-            CURRENT
-          </span>
-        )}
       </button>
 
       <Switch checked={player.enabled} onChange={onToggleEnabled} aria-label={`Enable ${player.name}`} />
