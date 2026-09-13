@@ -373,9 +373,7 @@ export function GameView({
           <NextPlayerPill disabled={players.length <= 1} onClick={handleNextPlayer} />
         </div>
 
-        <div className={dimWhenResult}>
-          <BottomBar active={activeDialog} onPlayers={goToPlayers} onHand={goToHand} />
-        </div>
+        <BottomBar active={activeDialog} onPlayers={goToPlayers} onHand={goToHand} />
 
         {resultShowing && result && (
           <ResultPopup
