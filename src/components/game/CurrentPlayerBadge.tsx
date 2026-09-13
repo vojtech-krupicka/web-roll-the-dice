@@ -5,7 +5,7 @@ type CurrentPlayerBadgeProps = {
   onClick: () => void;
 };
 
-/** Avatar-over-pill badge docked top-left of the drop area — shows and opens the current player. */
+/** Avatar-over-pill badge docked top-left of the drop area — shows and opens the current player's settings. */
 export function CurrentPlayerBadge({ player, onClick }: CurrentPlayerBadgeProps) {
   if (!player) return null;
 
@@ -13,12 +13,12 @@ export function CurrentPlayerBadge({ player, onClick }: CurrentPlayerBadgeProps)
     <button
       type="button"
       onClick={onClick}
-      aria-label={`${player.name}${player.enabled ? "" : " (disabled)"} — open players`}
-      className="absolute top-[14px] left-[14px] z-[3]"
+      aria-label={`Edit ${player.name}${player.enabled ? "" : " (disabled)"}`}
+      className="absolute top-[14px] left-[14px] z-[3] cursor-pointer transition-transform duration-150 hover:scale-[1.03] active:scale-95"
       style={{ opacity: player.enabled ? 1 : 0.5 }}
     >
       <div
-        className="ml-5 flex h-[34px] items-center rounded-full pr-4 pl-[26px] text-sm font-bold"
+        className="ml-5 flex h-[34px] items-center rounded-full pr-4 pl-[26px] text-sm font-bold transition-colors hover:bg-white/5"
         style={{ background: "#12131f", border: `1.5px solid ${player.color}66`, color: player.color }}
       >
         <span className="max-w-[110px] truncate">{player.name}</span>

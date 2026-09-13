@@ -14,7 +14,7 @@ export function RollHistoryPill({ lastRoll, lastRollPlayer, onClick }: RollHisto
     <button
       type="button"
       onClick={onClick}
-      className="absolute bottom-[114px] left-[-16px] z-[3] flex h-11 max-w-[190px] items-center gap-1.5 rounded-r-full border border-l-0 border-border bg-panel py-2 pr-3 pl-4 shadow-lg"
+      className="group absolute bottom-[114px] left-[-16px] z-[3] flex h-11 max-w-[190px] cursor-pointer items-center gap-1.5 rounded-r-full border border-l-0 border-border bg-panel py-2 pr-3 pl-4 shadow-lg transition-colors hover:border-accent-cyan/40 hover:bg-white/5 active:scale-[0.97]"
     >
       {lastRoll && lastRollPlayer ? (
         <>
@@ -26,7 +26,11 @@ export function RollHistoryPill({ lastRoll, lastRollPlayer, onClick }: RollHisto
       ) : (
         <span className="text-sm font-semibold text-faint">No rolls yet</span>
       )}
-      <ChevronRight size={14} className="shrink-0 text-faint" aria-hidden="true" />
+      <ChevronRight
+        size={14}
+        className="shrink-0 text-faint transition-transform duration-150 group-hover:translate-x-0.5 group-hover:text-accent-cyan"
+        aria-hidden="true"
+      />
     </button>
   );
 }
