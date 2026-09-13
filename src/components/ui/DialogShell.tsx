@@ -65,7 +65,7 @@ export function DialogShell({
             aria-label={addAction.label}
             className="absolute right-5 bottom-[170px] z-[3]"
           >
-            <div className="ml-5 flex h-8 items-center rounded-full border-[1.5px] border-border bg-panel py-0 pr-[30px] pl-4 shadow-lg">
+            <div className="mr-5 flex h-8 items-center rounded-full border-[1.5px] border-border bg-panel py-0 pr-[30px] pl-4 shadow-lg">
               <span className="text-[13px] font-bold tracking-wide whitespace-nowrap text-[#cbd5e1]">
                 {addAction.label}
               </span>
