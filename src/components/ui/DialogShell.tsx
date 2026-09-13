@@ -36,9 +36,13 @@ export type DialogShellProps = {
 /**
  * Full-screen dialog chrome shared by every game dialog — the same top/bottom
  * bar as the main screen, so switching between the main screen and a dialog
- * feels like one continuous surface rather than a modal popping up. Slides up
- * from the bottom edge on mount and slides back down before any of its exit
- * actions (back, confirm, bottom-nav) actually take effect.
+ * feels like one continuous surface rather than a modal popping up. The
+ * chrome itself (top bar, bottom bar, add-action pill, confirm FAB) appears
+ * immediately in its final position — it's the same bars the main screen
+ * already shows, so animating them too would look like a second bottom bar
+ * sliding up past the real one. Only the content panel slides up from the
+ * bottom edge on mount and slides back down before any of its exit actions
+ * (back, confirm, bottom-nav) actually take effect.
  */
 export function DialogShell({
   title,
@@ -74,11 +78,7 @@ export function DialogShell({
   const handleBottomNavHand = () => exit(bottomNav.onHand);
 
   return (
-    <div
-      className={`app-gradient-bg fixed inset-0 z-40 flex flex-col transition-transform duration-[260ms] ease-out ${
-        entered && !closing ? "translate-y-0" : "translate-y-full"
-      }`}
-    >
+    <div className="app-gradient-bg fixed inset-0 z-40 flex flex-col">
       <TopBar
         left={
           <button
@@ -94,7 +94,11 @@ export function DialogShell({
       />
 
       <div className="relative mx-4 mt-[18px] flex-1">
-        <div className="absolute inset-0 overflow-hidden rounded-[20px] border border-border bg-panel-inset">
+        <div
+          className={`absolute inset-0 overflow-hidden rounded-[20px] border border-border bg-panel-inset transition-transform duration-[260ms] ease-out ${
+            entered && !closing ? "translate-y-0" : "translate-y-full"
+          }`}
+        >
           <div className="h-full overflow-y-auto px-4 pt-4 pb-[160px]">{children}</div>
         </div>
 
