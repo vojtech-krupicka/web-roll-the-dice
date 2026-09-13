@@ -34,10 +34,9 @@ const LABEL_Y: Record<number, number> = {
 export function NumberDieFace({ sides, value, color, className }: NumberDieFaceProps) {
   const points = SHAPE_POINTS[sides];
   const labelY = LABEL_Y[sides] ?? 52;
-  const shapeStyle = color ? { fill: color, stroke: "rgba(0,0,0,0.25)" } : undefined;
-  const shapeClass = color
-    ? undefined
-    : "fill-white stroke-neutral-300 dark:fill-neutral-800 dark:stroke-neutral-600";
+  const shapeStyle = color
+    ? { fill: color, stroke: "rgba(0,0,0,0.25)" }
+    : { fill: "var(--color-panel-inset)", stroke: "var(--color-border-strong)" };
 
   return (
     <svg
@@ -47,17 +46,17 @@ export function NumberDieFace({ sides, value, color, className }: NumberDieFaceP
       aria-label={`d${sides} showing ${value}`}
     >
       {points ? (
-        <polygon points={points} strokeWidth="2" strokeLinejoin="round" style={shapeStyle} className={shapeClass} />
+        <polygon points={points} strokeWidth="2" strokeLinejoin="round" style={shapeStyle} />
       ) : (
-        <rect x="4" y="4" width="92" height="92" rx="16" strokeWidth="2" style={shapeStyle} className={shapeClass} />
+        <rect x="4" y="4" width="92" height="92" rx="16" strokeWidth="2" style={shapeStyle} />
       )}
       <text
         x="50"
         y={labelY}
         textAnchor="middle"
         dominantBaseline="central"
-        style={{ fontSize: sides >= 100 ? 26 : 32, ...(color ? { fill: "white" } : undefined) }}
-        className={color ? "font-bold tabular-nums" : "fill-neutral-900 font-bold tabular-nums dark:fill-neutral-100"}
+        style={{ fontSize: sides >= 100 ? 26 : 32, fill: color ? "white" : "var(--color-muted)" }}
+        className="font-bold tabular-nums"
       >
         {value}
       </text>

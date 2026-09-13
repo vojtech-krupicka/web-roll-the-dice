@@ -27,9 +27,9 @@ export function CopyButton({ value, className }: CopyButtonProps) {
       type="button"
       onClick={handleCopy}
       aria-label="Copy to clipboard"
-      className={`flex items-center justify-center rounded-lg p-2 text-neutral-500 transition hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-900 ${className ?? ""}`}
+      className={`flex items-center justify-center rounded-lg p-2 text-muted transition hover:bg-white/5 ${className ?? ""}`}
     >
-      {copied ? <Check size={18} className="text-green-600 dark:text-green-500" /> : <Copy size={18} />}
+      {copied ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} />}
     </button>
   );
 }

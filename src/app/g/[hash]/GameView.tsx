@@ -3,19 +3,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TopBar } from "@/components/layout/TopBar";
-import { HandToggleButton } from "@/components/dice/HandToggleButton";
+import { BottomBar } from "@/components/layout/BottomBar";
 import { HandPane } from "@/components/dice/HandPane";
 import { DropArea } from "@/components/dice/DropArea";
 import { RollButton } from "@/components/dice/RollButton";
 import { ResultPopup } from "@/components/dice/ResultPopup";
+import { LeaveButton } from "@/components/game/LeaveButton";
 import { SettingsButton } from "@/components/game/SettingsButton";
 import { SettingsMenu } from "@/components/game/SettingsMenu";
 import { GameHashDialog } from "@/components/game/GameHashDialog";
 import { GameEditPane } from "@/components/game/GameEditPane";
-import { CurrentPlayerBar } from "@/components/game/CurrentPlayerBar";
+import { CurrentPlayerBadge } from "@/components/game/CurrentPlayerBadge";
 import { PlayersPane } from "@/components/game/PlayersPane";
-import { NextPlayerButton } from "@/components/game/NextPlayerButton";
-import { RollHistoryBar } from "@/components/game/RollHistoryBar";
+import { NextPlayerPill } from "@/components/game/NextPlayerPill";
+import { RollHistoryPill } from "@/components/game/RollHistoryPill";
 import { RollHistoryDialog } from "@/components/game/RollHistoryDialog";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import {
@@ -36,6 +37,7 @@ import type { PlayerSummary } from "@/lib/players";
 import { computeRollData, type RollSummary } from "@/lib/rolls";
 
 type RollState = "idle" | "rolling" | "result";
+type ActiveDialog = "players" | "hand" | null;
 
 type GameViewProps = {
   hash: string;
@@ -75,7 +77,6 @@ export function GameView({
 
   const [players, setPlayers] = useState<PlayerSummary[]>(initialPlayers);
   const [currentPlayerId, setCurrentPlayerId] = useState(initialCurrentPlayerId);
-  const [playersPaneOpen, setPlayersPaneOpen] = useState(false);
   const [nextPlayerConfirmOpen, setNextPlayerConfirmOpen] = useState(false);
 
   const currentPlayer = players.find((p) => p.id === currentPlayerId);
@@ -93,8 +94,11 @@ export function GameView({
     const initialHand = initialPlayers.find((p) => p.id === initialCurrentPlayerId)?.currentHand;
     return initialHand && initialHand.length > 0 ? initialHand : DEFAULT_HAND;
   });
-  const [handPaneOpen, setHandPaneOpen] = useState(false);
   const [handError, setHandError] = useState<string | null>(null);
+
+  // ---- Players/Hand bottom-bar navigation — mutually exclusive ----
+
+  const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
 
   const [rollState, setRollState] = useState<RollState>("idle");
   const [faces, setFaces] = useState<Record<string, number>>({});
@@ -144,32 +148,70 @@ export function GameView({
     setNextPlayerConfirmOpen(false);
   }
 
-  function handleToggleHandPane() {
-    if (!handPaneOpen) {
+  /** Switches which bottom-bar dialog is open (or closes it), validating/persisting the hand first if leaving it. */
+  function requestActiveDialog(target: ActiveDialog) {
+    if (activeDialog === "hand" && target !== "hand") {
+      if (activeDiceCount(hand) === 0) {
+        setHandError("Select at least one die before closing your hand.");
+        return;
+      }
+      const pruned = pruneEmptyEnabledEntries(hand);
+      setHand(pruned);
+      setHandError(null);
+      if (currentPlayer) {
+        setPlayers((prev) =>
+          prev.map((p) => (p.id === currentPlayer.id ? { ...p, currentHand: pruned } : p)),
+        );
+        void updatePlayerHandAction(currentPlayer.id, pruned);
+      }
+    }
+
+    if (target === "hand") {
       clearRollTimers();
       setHandError(null);
       setResult(null);
       setRollState("idle");
-      setHandPaneOpen(true);
-      return;
     }
 
-    if (activeDiceCount(hand) === 0) {
-      setHandError("Select at least one die before closing your hand.");
-      return;
-    }
+    setActiveDialog(target);
+  }
 
-    const pruned = pruneEmptyEnabledEntries(hand);
-    setHand(pruned);
-    setHandError(null);
-    setHandPaneOpen(false);
+  function goToPlayers() {
+    requestActiveDialog(activeDialog === "players" ? null : "players");
+  }
 
-    if (currentPlayer) {
-      setPlayers((prev) =>
-        prev.map((p) => (p.id === currentPlayer.id ? { ...p, currentHand: pruned } : p)),
-      );
-      void updatePlayerHandAction(currentPlayer.id, pruned);
-    }
+  function goToHand() {
+    requestActiveDialog(activeDialog === "hand" ? null : "hand");
+  }
+
+  function closeWelcomeThenGoToPlayers() {
+    setWelcomeOpen(false);
+    goToPlayers();
+  }
+
+  function closeWelcomeThenGoToHand() {
+    setWelcomeOpen(false);
+    goToHand();
+  }
+
+  function closeEditThenGoToPlayers() {
+    setEditOpen(false);
+    goToPlayers();
+  }
+
+  function closeEditThenGoToHand() {
+    setEditOpen(false);
+    goToHand();
+  }
+
+  function closeHistoryThenGoToPlayers() {
+    setHistoryOpen(false);
+    goToPlayers();
+  }
+
+  function closeHistoryThenGoToHand() {
+    setHistoryOpen(false);
+    goToHand();
   }
 
   function updateEntry(sides: DieSides, update: (entry: HandEntry) => HandEntry) {
@@ -243,7 +285,17 @@ export function GameView({
   return (
     <div className="flex min-h-dvh flex-col">
       <TopBar
-        left={
+        left={<LeaveButton hash={hash} />}
+        center={
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            className="truncate text-sm font-bold"
+          >
+            {name}
+          </button>
+        }
+        right={
           <div className="relative">
             <SettingsButton onClick={() => setSettingsOpen(true)} />
             {settingsOpen && (
@@ -251,21 +303,9 @@ export function GameView({
             )}
           </div>
         }
-        center={
-          <button
-            type="button"
-            onClick={() => setEditOpen(true)}
-            className="truncate text-base font-semibold"
-          >
-            {name}
-          </button>
-        }
-        right={<HandToggleButton open={handPaneOpen} onClick={handleToggleHandPane} />}
       />
 
-      <CurrentPlayerBar player={currentPlayer} onClick={() => setPlayersPaneOpen(true)} />
-
-      <div className="relative flex flex-1 flex-col overflow-hidden">
+      <div className="relative mx-4 mt-[18px] flex-1">
         <DropArea
           dice={diceInstances.map((die) => ({
             key: die.key,
@@ -275,24 +315,36 @@ export function GameView({
           color={currentPlayer?.color}
         />
 
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 pb-10">
-          {rollState === "result" && result !== null && (
-            <ResultPopup value={result} onDismiss={handleDismissResult} />
-          )}
-          <div className="flex w-full max-w-sm items-stretch gap-3">
-            <RollButton
-              disabled={rollState !== "idle" || handPaneOpen || !currentPlayer?.enabled}
-              onClick={handleRoll}
-            />
-            <NextPlayerButton disabled={players.length <= 1} onClick={handleNextPlayer} />
-          </div>
-        </div>
+        <CurrentPlayerBadge player={currentPlayer} onClick={() => requestActiveDialog("players")} />
 
-        {handPaneOpen && (
+        <RollHistoryPill
+          lastRoll={lastRoll}
+          lastRollPlayer={lastRollPlayer}
+          onClick={() => setHistoryOpen(true)}
+        />
+        <NextPlayerPill disabled={players.length <= 1} onClick={handleNextPlayer} />
+
+        <BottomBar active={activeDialog} onPlayers={goToPlayers} onHand={goToHand} />
+
+        <RollButton
+          disabled={rollState !== "idle" || activeDialog === "hand" || !currentPlayer?.enabled}
+          onClick={handleRoll}
+        />
+
+        {rollState === "result" && result !== null && (
+          <ResultPopup value={result} onDismiss={handleDismissResult} />
+        )}
+
+        {activeDialog === "hand" && (
           <HandPane
             hand={hand}
             color={currentPlayer?.color}
             error={handError}
+            bottomNav={{
+              active: activeDialog,
+              onPlayers: () => requestActiveDialog("players"),
+              onHand: () => requestActiveDialog(null),
+            }}
             onToggleEnabled={handleToggleEnabled}
             onIncrement={handleIncrement}
             onDecrement={handleDecrement}
@@ -301,33 +353,39 @@ export function GameView({
         )}
       </div>
 
-      <RollHistoryBar
-        lastRoll={lastRoll}
-        lastRollPlayer={lastRollPlayer}
-        onClick={() => setHistoryOpen(true)}
-      />
-
-      {welcomeOpen && <GameHashDialog hash={hash} onDismiss={() => setWelcomeOpen(false)} />}
+      {welcomeOpen && (
+        <GameHashDialog
+          hash={hash}
+          bottomNav={{ active: activeDialog, onPlayers: closeWelcomeThenGoToPlayers, onHand: closeWelcomeThenGoToHand }}
+          onDismiss={() => setWelcomeOpen(false)}
+        />
+      )}
 
       {editOpen && (
         <GameEditPane
           hash={hash}
           name={name}
           hasPassword={hasPassword}
+          bottomNav={{ active: activeDialog, onPlayers: closeEditThenGoToPlayers, onHand: closeEditThenGoToHand }}
           onNameChange={setName}
           onPasswordChanged={() => setHasPassword(true)}
           onDismiss={() => setEditOpen(false)}
         />
       )}
 
-      {playersPaneOpen && (
+      {activeDialog === "players" && (
         <PlayersPane
           hash={hash}
           players={players}
           currentPlayerId={currentPlayerId}
+          bottomNav={{
+            active: activeDialog,
+            onPlayers: () => requestActiveDialog(null),
+            onHand: () => requestActiveDialog("hand"),
+          }}
           onPlayersChange={setPlayers}
           onSwitchPlayer={switchToPlayer}
-          onDismiss={() => setPlayersPaneOpen(false)}
+          onDismiss={() => requestActiveDialog(null)}
         />
       )}
 
@@ -345,6 +403,7 @@ export function GameView({
         <RollHistoryDialog
           rolls={rolls}
           players={players}
+          bottomNav={{ active: activeDialog, onPlayers: closeHistoryThenGoToPlayers, onHand: closeHistoryThenGoToHand }}
           onRollsChange={setRolls}
           onDismiss={() => setHistoryOpen(false)}
         />

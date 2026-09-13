@@ -1,56 +1,52 @@
-import { X } from "lucide-react";
-import { DIE_TYPES, type DieSides } from "@/lib/hand";
+import { DIE_TYPES, type DieSides, type HandEntry } from "@/lib/hand";
 import { DieSprite } from "./DieSprite";
+import { DialogShell, type DialogBottomNav } from "@/components/ui/DialogShell";
 
 type AddDiePopupProps = {
-  existingSides: DieSides[];
+  existingEntries: HandEntry[];
+  bottomNav: DialogBottomNav;
   onSelect: (sides: DieSides) => void;
   onDismiss: () => void;
 };
 
-/** A 2x4 grid of every die type; types already in the hand are disabled. */
-export function AddDiePopup({ existingSides, onSelect, onDismiss }: AddDiePopupProps) {
+/** A 2x4 grid of every die type; types already in the hand are disabled and show their count. */
+export function AddDiePopup({ existingEntries, bottomNav, onSelect, onDismiss }: AddDiePopupProps) {
   return (
-    <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-6"
-      onClick={onDismiss}
+    <DialogShell
+      title="Add die"
+      bottomNav={bottomNav}
+      onDismiss={onDismiss}
+      onConfirm={onDismiss}
+      confirmLabel="Done"
     >
-      <div
-        className="w-full max-w-sm rounded-2xl bg-background p-5 shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold tracking-wide text-neutral-500 uppercase dark:text-neutral-400">
-            Add die
-          </h3>
-          <button
-            type="button"
-            onClick={onDismiss}
-            aria-label="Close"
-            className="rounded-full p-1 text-neutral-500 transition hover:bg-neutral-100 dark:hover:bg-neutral-900"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-4 grid-rows-2 gap-3">
-          {DIE_TYPES.map((sides) => {
-            const disabled = existingSides.includes(sides);
-            return (
-              <button
-                key={sides}
-                type="button"
-                disabled={disabled}
-                onClick={() => onSelect(sides)}
-                className="flex flex-col items-center gap-1 rounded-xl border border-neutral-200 p-2 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 dark:border-neutral-800"
+      <div className="flex flex-wrap content-center items-center justify-center gap-4 pt-6">
+        {DIE_TYPES.map((sides) => {
+          const entry = existingEntries.find((e) => e.sides === sides);
+          return (
+            <button
+              key={sides}
+              type="button"
+              disabled={Boolean(entry)}
+              onClick={() => onSelect(sides)}
+              className={`relative flex h-[74px] w-[74px] flex-col items-center justify-center gap-1.5 rounded-2xl border bg-panel transition active:scale-95 disabled:cursor-not-allowed ${
+                entry ? "border-accent-cyan/40" : "border-border"
+              }`}
+            >
+              {entry && entry.count > 0 && (
+                <span className="cta-gradient absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[11px] font-bold text-[#0a0b14] shadow">
+                  {entry.count}
+                </span>
+              )}
+              <DieSprite sides={sides} value={1} className="h-8 w-8" />
+              <span
+                className={`font-mono text-[10px] tracking-[0.1em] ${entry ? "text-accent-cyan" : "text-muted"}`}
               >
-                <DieSprite sides={sides} value={1} className="h-9 w-9" />
-                <span className="text-xs font-medium">d{sides}</span>
-              </button>
-            );
-          })}
-        </div>
+                D{sides}
+              </span>
+            </button>
+          );
+        })}
       </div>
-    </div>
+    </DialogShell>
   );
 }

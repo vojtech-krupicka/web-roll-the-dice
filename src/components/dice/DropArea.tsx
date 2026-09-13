@@ -13,23 +13,37 @@ type DropAreaProps = {
   color?: string;
 };
 
-/** The dice drop-off area — shows every die currently in the hand. */
+const SIZE_CLASS: Partial<Record<DieSides, string>> = {
+  20: "h-[76px] w-[76px]",
+  6: "h-[66px] w-[66px]",
+  8: "h-[66px] w-[66px]",
+  4: "h-[62px] w-[62px]",
+};
+const DEFAULT_SIZE_CLASS = "h-[60px] w-[60px]";
+
+/** The dice drop-off area — dark panel + grid backdrop, dice clustered and vertically centered. */
 export function DropArea({ dice, color }: DropAreaProps) {
   return (
-    <div className="flex flex-[2] flex-wrap items-center justify-center gap-4 bg-neutral-100 p-6 dark:bg-neutral-900/60">
-      {dice.map((die) => (
-        <div key={die.key} className="flex flex-col items-center gap-1">
-          <span className="text-[10px] font-medium tracking-wide text-neutral-500 uppercase dark:text-neutral-400">
-            d{die.sides}
-          </span>
+    <div className="absolute inset-0 z-[1] overflow-hidden rounded-[20px] border border-border bg-panel-inset">
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(148,163,184,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.06) 1px, transparent 1px)",
+          backgroundSize: "24px 24px",
+        }}
+      />
+      <div className="absolute top-[62px] right-0 bottom-[148px] left-0 flex flex-wrap content-center items-center justify-center gap-5">
+        {dice.map((die) => (
           <DieSprite
+            key={die.key}
             sides={die.sides}
             value={die.face}
             color={color}
-            className="h-24 w-24 drop-shadow-xl sm:h-32 sm:w-32"
+            className={`drop-shadow-[0_0_8px_rgba(34,211,238,0.4)] ${SIZE_CLASS[die.sides] ?? DEFAULT_SIZE_CLASS}`}
           />
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

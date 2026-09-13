@@ -6,7 +6,7 @@ import { createGameAction } from "@/app/actions";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 
 const inputClass =
-  "rounded-xl border border-neutral-300 bg-transparent px-4 py-3 outline-none focus:border-neutral-500 dark:border-neutral-700 dark:focus:border-neutral-400";
+  "w-full rounded-xl border border-border bg-panel-inset px-4 py-3 text-[15px] outline-none focus:border-border-strong placeholder:text-faint";
 
 type CreateGamePaneProps = {
   onDismiss: () => void;
@@ -36,14 +36,14 @@ export function CreateGamePane({ onDismiss }: CreateGamePaneProps) {
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-6"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-6"
       onClick={onDismiss}
     >
       <div
-        className="w-full max-w-sm rounded-2xl bg-background p-5 shadow-2xl"
+        className="w-full max-w-sm rounded-2xl border border-border bg-panel p-5 shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
-        <h3 className="text-sm font-semibold tracking-wide text-neutral-500 uppercase dark:text-neutral-400">
+        <h3 className="text-[10px] font-bold tracking-[0.1em] text-faint uppercase">
           Create game
         </h3>
 
@@ -69,7 +69,7 @@ export function CreateGamePane({ onDismiss }: CreateGamePaneProps) {
         </div>
 
         {error && (
-          <p role="alert" className="mt-3 text-sm font-medium text-red-600 dark:text-red-400">
+          <p role="alert" className="mt-3 text-sm font-medium text-red-400">
             {error}
           </p>
         )}
@@ -78,7 +78,7 @@ export function CreateGamePane({ onDismiss }: CreateGamePaneProps) {
           type="button"
           onClick={handleCreate}
           disabled={pending || !name.trim()}
-          className="mt-5 w-full rounded-xl bg-neutral-900 px-5 py-3 font-semibold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
+          className="cta-gradient mt-5 w-full rounded-full py-3.5 text-[15px] font-bold text-[#0a0b14] transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Create
         </button>

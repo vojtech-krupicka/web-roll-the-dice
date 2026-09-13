@@ -10,24 +10,22 @@ type LegendPopupProps = {
 export function LegendPopup({ onDismiss }: LegendPopupProps) {
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-6"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
       onClick={onDismiss}
     >
       <div
-        className="w-full max-w-sm rounded-2xl bg-background p-5 shadow-2xl"
+        className="w-full max-w-sm rounded-2xl border border-border bg-panel p-5 shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-sm font-semibold tracking-wide text-neutral-500 uppercase dark:text-neutral-400">
-            Legend
-          </h3>
+          <h3 className="text-[10px] font-bold tracking-[0.1em] text-faint uppercase">Legend</h3>
           <button
             type="button"
             onClick={onDismiss}
             aria-label="Close"
-            className="rounded-full p-1 text-neutral-500 transition hover:bg-neutral-100 dark:hover:bg-neutral-900"
+            className="rounded-full p-1 text-muted transition hover:bg-white/5"
           >
-            <X size={18} />
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
 
@@ -35,10 +33,10 @@ export function LegendPopup({ onDismiss }: LegendPopupProps) {
           {DIE_TYPES.map((sides) => (
             <div
               key={sides}
-              className="flex flex-col items-center gap-1 rounded-xl border border-neutral-200 p-2 dark:border-neutral-800"
+              className="flex flex-col items-center gap-1 rounded-xl border border-border bg-panel-inset p-2"
             >
               <DieSprite sides={sides} value={1} className="h-9 w-9" />
-              <span className="text-xs font-medium">d{sides}</span>
+              <span className="text-xs font-medium text-muted">d{sides}</span>
             </div>
           ))}
         </div>

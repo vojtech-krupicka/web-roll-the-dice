@@ -44,8 +44,11 @@ export function DieFace({ value, color, className }: DieFaceProps) {
         height="92"
         rx="16"
         strokeWidth="2"
-        style={color ? { fill: color, stroke: "rgba(0,0,0,0.25)" } : undefined}
-        className={color ? undefined : "fill-white stroke-neutral-300 dark:fill-neutral-800 dark:stroke-neutral-600"}
+        style={
+          color
+            ? { fill: color, stroke: "rgba(0,0,0,0.25)" }
+            : { fill: "var(--color-panel-inset)", stroke: "var(--color-border-strong)" }
+        }
       />
       {pips.map((key) => {
         const [cx, cy] = PIP_POSITIONS[key];
@@ -55,8 +58,7 @@ export function DieFace({ value, color, className }: DieFaceProps) {
             cx={cx}
             cy={cy}
             r="8"
-            style={color ? { fill: "white" } : undefined}
-            className={color ? undefined : "fill-neutral-900 dark:fill-neutral-100"}
+            style={{ fill: color ? "white" : "var(--color-muted)" }}
           />
         );
       })}

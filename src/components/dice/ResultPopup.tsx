@@ -13,9 +13,9 @@ export function ResultPopup({ value, onDismiss }: ResultPopupProps) {
       type="button"
       aria-label="Dismiss result and roll again"
       onClick={onDismiss}
-      className="fixed inset-0 z-20 flex cursor-pointer items-end justify-center bg-black/10 pb-36 backdrop-blur-[1px] dark:bg-black/30"
+      className="fixed inset-0 z-20 flex cursor-pointer items-end justify-center bg-black/50 pb-[190px] backdrop-blur-[2px]"
     >
-      <span className="rounded-2xl bg-neutral-900 px-10 py-5 text-4xl font-bold tabular-nums text-white shadow-2xl dark:bg-neutral-100 dark:text-neutral-900">
+      <span className="cta-gradient rounded-2xl px-10 py-5 text-4xl font-bold tabular-nums text-[#0a0b14] shadow-2xl">
         {value}
       </span>
     </button>

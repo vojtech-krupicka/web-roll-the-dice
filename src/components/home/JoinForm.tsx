@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import { checkGameAction, joinGameWithPasswordAction } from "@/app/actions";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 
 type Stage = "hash" | "password";
 
-const inputClass =
-  "rounded-xl border border-neutral-300 bg-transparent px-4 py-3 text-base outline-none focus:border-neutral-500 disabled:opacity-60 dark:border-neutral-700 dark:focus:border-neutral-400";
+const passwordInputClass =
+  "w-full rounded-xl border border-border bg-panel-inset px-4 py-3 text-[15px] outline-none focus:border-border-strong disabled:opacity-60";
 
 type JoinFormProps = {
   initialHash?: string;
@@ -65,60 +66,69 @@ export function JoinForm({ initialHash = "" }: JoinFormProps) {
   }
 
   return (
-    <div className="flex w-full max-w-sm flex-col gap-3">
-      <div className="flex gap-2">
+    <div className="flex w-full flex-col gap-5 rounded-3xl border border-border bg-panel p-5">
+      <div>
+        <label className="mb-2 block text-[10px] font-bold tracking-[0.1em] text-faint">
+          GAME CODE
+        </label>
         <input
           value={hash}
           onChange={(event) => resetToHashStage(event.target.value)}
-          placeholder="Game hash"
+          placeholder="NYX7K"
           maxLength={5}
           disabled={stage === "password"}
-          className={`flex-1 text-center text-lg tracking-[0.3em] uppercase ${inputClass}`}
+          className="w-full rounded-xl border-[1.5px] border-accent-cyan/45 bg-panel-inset px-4 py-3.5 text-center font-mono text-lg font-bold tracking-[0.22em] text-[#67e8f9] uppercase outline-none placeholder:text-faint disabled:opacity-60"
         />
-        {stage === "hash" && (
-          <button
-            type="button"
-            onClick={handleJoin}
-            disabled={pending || hash.trim().length !== 5}
-            className="rounded-xl bg-neutral-900 px-5 py-3 font-semibold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
-          >
-            Join
-          </button>
-        )}
       </div>
 
       {stage === "password" && (
-        <div className="flex flex-col gap-2">
+        <div>
+          <label className="mb-2 block text-[10px] font-bold tracking-[0.1em] text-faint">
+            PASSWORD
+          </label>
           <PasswordInput
             value={password}
             onChange={setPassword}
             placeholder="Password"
-            className={inputClass}
+            className={passwordInputClass}
           />
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => resetToHashStage(hash)}
-              className="flex-1 rounded-xl border border-neutral-300 px-5 py-3 font-semibold transition hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleConfirmPassword}
-              disabled={pending || !password}
-              className="flex-1 rounded-xl bg-neutral-900 px-5 py-3 font-semibold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
-            >
-              Confirm
-            </button>
-          </div>
         </div>
       )}
 
       {error && (
-        <p role="alert" className="text-sm font-medium text-red-600 dark:text-red-400">
+        <p role="alert" className="text-sm font-medium text-red-400">
           {error}
         </p>
+      )}
+
+      {stage === "hash" ? (
+        <button
+          type="button"
+          onClick={handleJoin}
+          disabled={pending || hash.trim().length !== 5}
+          className="cta-gradient flex items-center justify-center gap-2 rounded-full py-3.5 text-[15px] font-bold text-[#0a0b14] transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Join Game
+          <ArrowRight size={16} aria-hidden="true" />
+        </button>
+      ) : (
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={() => resetToHashStage(hash)}
+            className="flex-1 rounded-full border border-border-strong py-3.5 text-[15px] font-semibold text-muted transition hover:bg-white/5"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirmPassword}
+            disabled={pending || !password}
+            className="cta-gradient flex-1 rounded-full py-3.5 text-[15px] font-bold text-[#0a0b14] transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Join Game
+          </button>
+        </div>
       )}
     </div>
   );

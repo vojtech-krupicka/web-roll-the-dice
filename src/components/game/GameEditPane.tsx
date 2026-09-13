@@ -2,19 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DialogShell, type DialogBottomNav } from "@/components/ui/DialogShell";
 import { deleteGameAction, leaveGameAction, updateGameAction } from "@/app/actions";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 
 const inputClass =
-  "rounded-xl border border-neutral-300 bg-transparent px-4 py-3 outline-none focus:border-neutral-500 dark:border-neutral-700 dark:focus:border-neutral-400";
+  "w-full rounded-xl border border-border bg-panel px-4 py-3 text-[15px] outline-none focus:border-border-strong placeholder:text-faint";
 
 type GameEditPaneProps = {
   hash: string;
   name: string;
   hasPassword: boolean;
+  bottomNav: DialogBottomNav;
   onNameChange: (name: string) => void;
   onPasswordChanged: () => void;
   onDismiss: () => void;
@@ -25,6 +26,7 @@ export function GameEditPane({
   hash,
   name,
   hasPassword,
+  bottomNav,
   onNameChange,
   onPasswordChanged,
   onDismiss,
@@ -85,33 +87,17 @@ export function GameEditPane({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-background px-6 py-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold tracking-wide text-neutral-500 uppercase dark:text-neutral-400">
-          Game settings
-        </h2>
-        <button
-          type="button"
-          onClick={onDismiss}
-          aria-label="Close"
-          className="rounded-full p-1 text-neutral-500 transition hover:bg-neutral-100 dark:hover:bg-neutral-900"
-        >
-          <X size={20} />
-        </button>
-      </div>
-
-      <div className="mt-4 flex items-center justify-center gap-2">
-        <span className="text-3xl font-bold tracking-[0.3em] uppercase">{hash}</span>
+    <DialogShell title="Game settings" bottomNav={bottomNav} onDismiss={onDismiss}>
+      <div className="flex items-center justify-center gap-2">
+        <span className="font-mono text-2xl font-bold tracking-[0.2em] text-[#67e8f9] uppercase">{hash}</span>
         <CopyButton value={hash} />
       </div>
 
-      <div className="mx-auto mt-6 flex w-full max-w-sm flex-col gap-3">
-        <label className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Name</label>
+      <div className="mt-6 flex flex-col gap-3">
+        <label className="text-[10px] font-bold tracking-[0.1em] text-faint">NAME</label>
         <input value={nameInput} onChange={(event) => setNameInput(event.target.value)} className={inputClass} />
 
-        <label className="mt-2 text-sm font-medium text-neutral-600 dark:text-neutral-400">
-          Change password
-        </label>
+        <label className="mt-2 text-[10px] font-bold tracking-[0.1em] text-faint">CHANGE PASSWORD</label>
         {hasPassword && (
           <PasswordInput
             value={currentPassword}
@@ -134,27 +120,27 @@ export function GameEditPane({
         />
 
         {saveError && (
-          <p role="alert" className="text-sm font-medium text-red-600 dark:text-red-400">
+          <p role="alert" className="text-sm font-medium text-red-400">
             {saveError}
           </p>
         )}
-        {savedFlash && <p className="text-sm font-medium text-green-600 dark:text-green-500">Saved.</p>}
+        {savedFlash && <p className="text-sm font-medium text-emerald-400">Saved.</p>}
 
         <button
           type="button"
           onClick={handleSave}
           disabled={saving || !nameInput.trim()}
-          className="mt-2 rounded-xl bg-neutral-900 px-5 py-3 font-semibold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-900"
+          className="cta-gradient mt-2 rounded-full py-3 text-[15px] font-bold text-[#0a0b14] transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Save
         </button>
       </div>
 
-      <div className="mx-auto mt-8 flex w-full max-w-sm flex-col gap-3 border-t border-neutral-200 pt-6 dark:border-neutral-800">
+      <div className="mt-8 flex flex-col gap-3 border-t border-border pt-6">
         <button
           type="button"
           onClick={() => setLeaveConfirmOpen(true)}
-          className="rounded-xl border border-neutral-300 px-5 py-3 font-semibold transition hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-900"
+          className="rounded-full border border-border-strong py-3 text-[15px] font-semibold text-muted transition hover:bg-white/5"
         >
           Leave game
         </button>
@@ -169,7 +155,7 @@ export function GameEditPane({
             />
           )}
           {deleteError && (
-            <p role="alert" className="text-sm font-medium text-red-600 dark:text-red-400">
+            <p role="alert" className="text-sm font-medium text-red-400">
               {deleteError}
             </p>
           )}
@@ -177,7 +163,7 @@ export function GameEditPane({
             type="button"
             onClick={() => setDeleteConfirmOpen(true)}
             disabled={hasPassword && !deletePassword}
-            className="rounded-xl bg-red-600 px-5 py-3 font-semibold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-full bg-red-500/90 py-3 text-[15px] font-bold text-white transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
           >
             Delete game
           </button>
@@ -205,6 +191,6 @@ export function GameEditPane({
           onCancel={() => setDeleteConfirmOpen(false)}
         />
       )}
-    </div>
+    </DialogShell>
   );
 }
