@@ -16,12 +16,14 @@ export function BottomBar({ active, onPlayers, onHand }: BottomBarProps) {
         label="Players"
         active={active === "players"}
         onClick={onPlayers}
+        side="left"
       />
       <NavButton
         icon={<Dices size={22} strokeWidth={1.9} aria-hidden="true" />}
         label="Hand"
         active={active === "hand"}
         onClick={onHand}
+        side="right"
       />
     </div>
   );
@@ -32,11 +34,13 @@ function NavButton({
   label,
   active,
   onClick,
+  side,
 }: {
   icon: ReactNode;
   label: string;
   active: boolean;
   onClick: () => void;
+  side: "left" | "right";
 }) {
   return (
     <button
@@ -47,8 +51,18 @@ function NavButton({
         active ? "text-accent-cyan" : "text-muted hover:text-white"
       }`}
     >
-      <span className="inline-flex transition-transform duration-150 group-hover:scale-110">{icon}</span>
-      <span className="text-[13px] font-bold transition-transform duration-150 group-hover:scale-110">
+      <span
+        className={`inline-flex transition-transform duration-150 group-hover:scale-110 ${
+          side === "left" ? "-translate-x-3" : "translate-x-3"
+        }`}
+      >
+        {icon}
+      </span>
+      <span
+        className={`text-[13px] font-bold transition-transform duration-150 group-hover:scale-110 ${
+          side === "left" ? "-translate-x-3" : "translate-x-3"
+        }`}
+      >
         {label}
       </span>
     </button>
