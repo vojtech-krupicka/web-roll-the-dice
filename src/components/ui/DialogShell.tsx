@@ -19,6 +19,15 @@ export type DialogShellProps = {
   onConfirm?: () => void;
   confirmLabel?: string;
   confirmDisabled?: boolean;
+  /**
+   * Set when this shell instance is shared across sibling sub-views (e.g. a
+   * player list and its add/edit form, or a hand and its add-die grid) and
+   * `onDismiss`/`onConfirm` just switch back to a sibling rather than truly
+   * closing the dialog. Skips the slide-down exit for those two actions so
+   * the shell stays put and only its content swaps — bottom-nav navigation
+   * (which does leave the dialog family) still always animates.
+   */
+  instant?: boolean;
   bottomNav: DialogBottomNav;
   addAction?: { label: string; onClick: () => void };
   children: ReactNode;
@@ -37,6 +46,7 @@ export function DialogShell({
   onConfirm,
   confirmLabel = "OK",
   confirmDisabled,
+  instant,
   bottomNav,
   addAction,
   children,
@@ -45,17 +55,12 @@ export function DialogShell({
   const [closing, setClosing] = useState(false);
 
   useEffect(() => {
-    // Two rAFs so the browser paints the initial off-screen position at least
-    // once before the transition to translate-y-0 starts — a single rAF can
-    // land in the same paint as the initial render and skip the animation.
-    let raf2 = 0;
-    const raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => setEntered(true));
-    });
-    return () => {
-      cancelAnimationFrame(raf1);
-      cancelAnimationFrame(raf2);
-    };
+    // A short timeout (rather than requestAnimationFrame) so the browser
+    // paints the initial off-screen position at least once before the
+    // transition to translate-y-0 starts — rAF can be suspended entirely on
+    // a backgrounded/inactive tab, silently skipping the animation.
+    const id = setTimeout(() => setEntered(true), 20);
+    return () => clearTimeout(id);
   }, []);
 
   function exit(after: () => void) {
@@ -63,8 +68,8 @@ export function DialogShell({
     setTimeout(after, TRANSITION_MS);
   }
 
-  const handleDismiss = () => exit(onDismiss);
-  const handleConfirm = () => exit(onConfirm ?? onDismiss);
+  const handleDismiss = instant ? onDismiss : () => exit(onDismiss);
+  const handleConfirm = instant ? (onConfirm ?? onDismiss) : () => exit(onConfirm ?? onDismiss);
   const handleBottomNavPlayers = () => exit(bottomNav.onPlayers);
   const handleBottomNavHand = () => exit(bottomNav.onHand);
 
@@ -100,7 +105,7 @@ export function DialogShell({
             aria-label={addAction.label}
             className="absolute right-5 bottom-[170px] z-[3] cursor-pointer transition-transform duration-150 hover:scale-[1.03] active:scale-95"
           >
-            <div className="mr-5 flex h-8 items-center rounded-full border-[1.5px] border-border bg-panel py-0 pr-[30px] pl-4 shadow-lg transition-colors hover:bg-white/5">
+            <div className="mr-5 flex h-8 items-center rounded-full border-[1.5px] border-border bg-panel py-0 pr-[30px] pl-4 shadow-lg transition-colors hover:bg-panel-hover">
               <span className="text-[13px] font-bold tracking-wide whitespace-nowrap text-[#cbd5e1]">
                 {addAction.label}
               </span>

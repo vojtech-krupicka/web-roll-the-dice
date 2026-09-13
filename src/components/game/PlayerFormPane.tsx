@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { PLAYER_COLORS, PLAYER_ICONS, pickRandomAvailableColor } from "@/lib/playerColors";
+import { PLAYER_ICONS, pickRandomAvailableColor } from "@/lib/playerColors";
 import { DialogShell, type DialogBottomNav } from "@/components/ui/DialogShell";
-import { Switch } from "@/components/ui/Switch";
+import { PlayerFormFields } from "./PlayerFormFields";
 
 export type PlayerFormValues = {
   name: string;
@@ -23,7 +23,13 @@ type PlayerFormPaneProps = {
   onDismiss: () => void;
 };
 
-/** Add/edit form for a player: name, color, icon, enabled. */
+/**
+ * Standalone add/edit player dialog — used when the form is opened directly
+ * (e.g. the current-player badge), so a fresh slide-up/down is correct here.
+ * The Players list opens the same fields inline within its own DialogShell
+ * instead of this wrapper, so switching between the list and the form
+ * doesn't remount the shell and double up the slide animation.
+ */
 export function PlayerFormPane({
   mode,
   initial,
@@ -54,68 +60,17 @@ export function PlayerFormPane({
       onConfirm={handleSubmit}
       confirmDisabled={pending || !name.trim()}
     >
-      <div className="flex flex-col gap-6">
-        <div>
-          <p className="mb-2 text-[10px] font-bold tracking-[0.1em] text-faint">NAME</p>
-          <input
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="Player name"
-            className="w-full rounded-xl border border-border-strong bg-panel px-4 py-3 text-[15px] font-bold outline-none focus:border-accent-cyan/60"
-            style={{ color }}
-          />
-        </div>
-
-        <div>
-          <p className="mb-2 text-[10px] font-bold tracking-[0.1em] text-faint">COLOR</p>
-          <div className="flex flex-wrap gap-3">
-            {PLAYER_COLORS.map((c) => {
-              const taken = usedColors.includes(c) && c !== color;
-              const selected = color === c;
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setColor(c)}
-                  disabled={taken}
-                  title={taken ? "Already used by another player" : undefined}
-                  aria-label={c}
-                  aria-pressed={selected}
-                  className="h-9 w-9 rounded-full transition disabled:cursor-not-allowed disabled:opacity-25"
-                  style={{
-                    backgroundColor: c,
-                    boxShadow: selected ? `0 0 0 3px var(--color-panel-inset), 0 0 0 5px ${c}, 0 0 12px ${c}b3` : undefined,
-                  }}
-                />
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <p className="mb-2 text-[10px] font-bold tracking-[0.1em] text-faint">ICON</p>
-          <div className="flex gap-3">
-            {PLAYER_ICONS.map((i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setIcon(i)}
-                aria-pressed={icon === i}
-                className={`flex h-[52px] w-[52px] items-center justify-center rounded-2xl border-[1.5px] bg-panel text-2xl transition ${
-                  icon === i ? "border-accent-cyan/50 shadow-[0_0_12px_rgba(34,211,238,0.3)]" : "border-border"
-                }`}
-              >
-                {i}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span className="text-[13px] font-semibold text-[#cbd5e1]">Active in rotation</span>
-          <Switch checked={enabled} onChange={setEnabled} aria-label="Active in rotation" />
-        </div>
-      </div>
+      <PlayerFormFields
+        name={name}
+        onNameChange={setName}
+        color={color}
+        onColorChange={setColor}
+        icon={icon}
+        onIconChange={setIcon}
+        enabled={enabled}
+        onEnabledChange={setEnabled}
+        usedColors={usedColors}
+      />
     </DialogShell>
   );
 }

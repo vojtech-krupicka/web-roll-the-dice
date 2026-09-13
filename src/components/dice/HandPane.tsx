@@ -2,7 +2,7 @@ import { useState } from "react";
 import { DIE_TYPES, activeDiceCount, type DieSides, type HandEntry } from "@/lib/hand";
 import { DialogShell, type DialogBottomNav } from "@/components/ui/DialogShell";
 import { HandRow } from "./HandRow";
-import { AddDiePopup } from "./AddDiePopup";
+import { AddDieGrid } from "./AddDieGrid";
 
 type HandPaneProps = {
   hand: HandEntry[];
@@ -14,7 +14,13 @@ type HandPaneProps = {
   onAddDieType: (sides: DieSides) => void;
 };
 
-/** Full-screen hand editor — covers the drop area while open. */
+/**
+ * Full-screen hand editor — covers the drop area while open. The add-die
+ * grid is rendered inline in the SAME DialogShell instance (just swapping
+ * title/content/confirm) rather than via a separately-mounted dialog, so
+ * switching between the list and the grid doesn't remount the shell and
+ * re-trigger its slide animation.
+ */
 export function HandPane({
   hand,
   color,
@@ -29,15 +35,22 @@ export function HandPane({
 
   if (addDieOpen) {
     return (
-      <AddDiePopup
-        existingEntries={hand}
+      <DialogShell
+        title="Add die"
         bottomNav={bottomNav}
-        onSelect={(sides) => {
-          onAddDieType(sides);
-          setAddDieOpen(false);
-        }}
+        instant
         onDismiss={() => setAddDieOpen(false)}
-      />
+        onConfirm={() => setAddDieOpen(false)}
+        confirmLabel="Done"
+      >
+        <AddDieGrid
+          existingEntries={hand}
+          onSelect={(sides) => {
+            onAddDieType(sides);
+            setAddDieOpen(false);
+          }}
+        />
+      </DialogShell>
     );
   }
 

@@ -12,10 +12,11 @@ import {
 import { SortableContext, arrayMove, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { addPlayerAction, reorderPlayersAction, setCurrentPlayerAction, updatePlayerAction } from "@/app/actions";
 import type { PlayerSummary } from "@/lib/players";
+import { PLAYER_ICONS, pickRandomAvailableColor } from "@/lib/playerColors";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DialogShell, type DialogBottomNav } from "@/components/ui/DialogShell";
 import { PlayerRow } from "./PlayerRow";
-import { PlayerFormPane, type PlayerFormValues } from "./PlayerFormPane";
+import { PlayerFormFields } from "./PlayerFormFields";
 
 type PlayersPaneProps = {
   hash: string;
@@ -29,7 +30,13 @@ type PlayersPaneProps = {
 
 type FormState = { mode: "add" } | { mode: "edit"; player: PlayerSummary } | null;
 
-/** Full-screen player list: reorder (drag), enable, edit, and switch the current player. */
+/**
+ * Full-screen player list: reorder (drag), enable, edit, and switch the
+ * current player. The add/edit form is rendered inline in the SAME
+ * DialogShell instance (just swapping title/content/confirm) rather than via
+ * a separately-mounted dialog, so switching between the list and the form
+ * doesn't remount the shell and re-trigger its slide animation.
+ */
 export function PlayersPane({
   hash,
   players,
@@ -42,6 +49,28 @@ export function PlayersPane({
   const [form, setForm] = useState<FormState>(null);
   const [switchTarget, setSwitchTarget] = useState<PlayerSummary | null>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+  // Add/edit form field state — only meaningful while `form` is set.
+  const [formName, setFormName] = useState("");
+  const [formColor, setFormColor] = useState("");
+  const [formIcon, setFormIcon] = useState<string>(PLAYER_ICONS[0]);
+  const [formEnabled, setFormEnabled] = useState(true);
+  const [formPending, setFormPending] = useState(false);
+
+  function openForm(next: Exclude<FormState, null>) {
+    if (next.mode === "edit") {
+      setFormName(next.player.name);
+      setFormColor(next.player.color);
+      setFormIcon(next.player.icon);
+      setFormEnabled(next.player.enabled);
+    } else {
+      setFormName(`Player #${players.length + 1}`);
+      setFormColor(pickRandomAvailableColor(players.map((p) => p.color)));
+      setFormIcon(PLAYER_ICONS[0]);
+      setFormEnabled(true);
+    }
+    setForm(next);
+  }
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -65,7 +94,11 @@ export function PlayersPane({
     });
   }
 
-  async function handleFormSubmit(values: PlayerFormValues) {
+  async function handleFormSubmit() {
+    if (!formName.trim()) return;
+    setFormPending(true);
+    const values = { name: formName.trim(), color: formColor, icon: formIcon, enabled: formEnabled };
+
     if (form?.mode === "edit") {
       const result = await updatePlayerAction(form.player.id, values);
       if (result.ok) {
@@ -77,6 +110,8 @@ export function PlayersPane({
         onPlayersChange([...players, result.data.player]);
       }
     }
+
+    setFormPending(false);
     setForm(null);
   }
 
@@ -89,18 +124,31 @@ export function PlayersPane({
   }
 
   if (form) {
+    const usedColors = players
+      .filter((p) => !(form.mode === "edit" && p.id === form.player.id))
+      .map((p) => p.color);
+
     return (
-      <PlayerFormPane
-        mode={form.mode}
-        initial={form.mode === "edit" ? form.player : undefined}
-        defaultName={`Player #${players.length + 1}`}
-        usedColors={players
-          .filter((p) => !(form.mode === "edit" && p.id === form.player.id))
-          .map((p) => p.color)}
+      <DialogShell
+        title={form.mode === "add" ? "Add player" : "Edit player"}
         bottomNav={bottomNav}
-        onSubmit={handleFormSubmit}
+        instant
         onDismiss={() => setForm(null)}
-      />
+        onConfirm={handleFormSubmit}
+        confirmDisabled={formPending || !formName.trim()}
+      >
+        <PlayerFormFields
+          name={formName}
+          onNameChange={setFormName}
+          color={formColor}
+          onColorChange={setFormColor}
+          icon={formIcon}
+          onIconChange={setFormIcon}
+          enabled={formEnabled}
+          onEnabledChange={setFormEnabled}
+          usedColors={usedColors}
+        />
+      </DialogShell>
     );
   }
 
@@ -109,7 +157,7 @@ export function PlayersPane({
       title="Players"
       bottomNav={bottomNav}
       onDismiss={onDismiss}
-      addAction={{ label: "Add player", onClick: () => setForm({ mode: "add" }) }}
+      addAction={{ label: "Add player", onClick: () => openForm({ mode: "add" }) }}
     >
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={players.map((p) => p.id)} strategy={verticalListSortingStrategy}>
@@ -120,7 +168,7 @@ export function PlayersPane({
                 player={player}
                 isCurrent={player.id === currentPlayerId}
                 onToggleEnabled={() => handleToggleEnabled(player)}
-                onEdit={() => setForm({ mode: "edit", player })}
+                onEdit={() => openForm({ mode: "edit", player })}
                 onSelect={() => setSwitchTarget(player)}
               />
             ))}
