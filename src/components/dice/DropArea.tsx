@@ -5,6 +5,8 @@ export type DropAreaDie = {
   key: string;
   sides: DieSides;
   face: number;
+  /** False while this die is still mid-roll — dims it and drops its glow until it settles. */
+  settled: boolean;
 };
 
 type DropAreaProps = {
@@ -40,7 +42,11 @@ export function DropArea({ dice, color }: DropAreaProps) {
             sides={die.sides}
             value={die.face}
             color={color}
-            className={`drop-shadow-[0_0_8px_rgba(34,211,238,0.4)] ${SIZE_CLASS[die.sides] ?? DEFAULT_SIZE_CLASS}`}
+            className={`transition-all duration-150 ${SIZE_CLASS[die.sides] ?? DEFAULT_SIZE_CLASS} ${
+              die.settled
+                ? "opacity-100 drop-shadow-[0_0_8px_rgba(34,211,238,0.4)] brightness-100"
+                : "opacity-80 drop-shadow-none brightness-[0.55]"
+            }`}
           />
         ))}
       </div>

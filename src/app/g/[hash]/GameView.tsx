@@ -29,7 +29,6 @@ import {
 import { ROLL_TICK_INTERVAL_MS, randomRollDuration, rollDie } from "@/lib/dice";
 import {
   DEFAULT_HAND,
-  activeDiceCount,
   flattenHand,
   pruneEmptyEnabledEntries,
   type DieSides,
@@ -97,7 +96,6 @@ export function GameView({
     const initialHand = initialPlayers.find((p) => p.id === initialCurrentPlayerId)?.currentHand;
     return initialHand && initialHand.length > 0 ? initialHand : DEFAULT_HAND;
   });
-  const [handError, setHandError] = useState<string | null>(null);
 
   // ---- Players/Hand bottom-bar navigation — mutually exclusive ----
 
@@ -106,6 +104,7 @@ export function GameView({
   const [rollState, setRollState] = useState<RollState>("idle");
   const [faces, setFaces] = useState<Record<string, number>>({});
   const [result, setResult] = useState<number | null>(null);
+  const [settled, setSettled] = useState<Record<string, boolean>>({});
   const timersRef = useRef<{
     intervals: ReturnType<typeof setInterval>[];
     timeouts: ReturnType<typeof setTimeout>[];
@@ -134,7 +133,6 @@ export function GameView({
     setFaces({});
     setResult(null);
     setRollState("idle");
-    setHandError(null);
 
     void setCurrentPlayerAction(hash, playerId);
   }
@@ -151,16 +149,11 @@ export function GameView({
     setNextPlayerConfirmOpen(false);
   }
 
-  /** Switches which bottom-bar dialog is open (or closes it), validating/persisting the hand first if leaving it. */
+  /** Switches which bottom-bar dialog is open (or closes it), persisting the hand first if leaving it. */
   function requestActiveDialog(target: ActiveDialog) {
     if (activeDialog === "hand" && target !== "hand") {
-      if (activeDiceCount(hand) === 0) {
-        setHandError("Select at least one die before closing your hand.");
-        return;
-      }
       const pruned = pruneEmptyEnabledEntries(hand);
       setHand(pruned);
-      setHandError(null);
       if (currentPlayer) {
         setPlayers((prev) =>
           prev.map((p) => (p.id === currentPlayer.id ? { ...p, currentHand: pruned } : p)),
@@ -171,7 +164,6 @@ export function GameView({
 
     if (target === "hand") {
       clearRollTimers();
-      setHandError(null);
       setResult(null);
       setRollState("idle");
     }
@@ -262,6 +254,7 @@ export function GameView({
 
     clearRollTimers();
     setRollState("rolling");
+    setSettled({});
 
     const finalFaces: Record<string, number> = {};
     let settledCount = 0;
@@ -277,6 +270,7 @@ export function GameView({
         const finalValue = rollDie(die.sides);
         finalFaces[die.key] = finalValue;
         setFaces((prev) => ({ ...prev, [die.key]: finalValue }));
+        setSettled((prev) => ({ ...prev, [die.key]: true }));
 
         settledCount += 1;
         if (settledCount === diceInstances.length) {
@@ -332,6 +326,7 @@ export function GameView({
             key: die.key,
             sides: die.sides,
             face: faces[die.key] ?? 1,
+            settled: rollState !== "rolling" || settled[die.key] === true,
           }))}
           color={currentPlayer?.color}
         />
@@ -349,6 +344,7 @@ export function GameView({
 
         <RollButton
           disabled={rollState !== "idle" || activeDialog === "hand" || !currentPlayer?.enabled}
+          rolling={rollState === "rolling"}
           onClick={handleRoll}
         />
 
@@ -360,7 +356,6 @@ export function GameView({
           <HandPane
             hand={hand}
             color={currentPlayer?.color}
-            error={handError}
             bottomNav={{
               active: activeDialog,
               onPlayers: () => requestActiveDialog("players"),
