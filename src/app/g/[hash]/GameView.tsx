@@ -6,6 +6,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { BottomBar } from "@/components/layout/BottomBar";
 import { HandPane } from "@/components/dice/HandPane";
 import { DropArea } from "@/components/dice/DropArea";
+import { Dice3DArea, type Dice3DAreaHandle } from "@/components/dice/Dice3DArea";
 import { RollButton } from "@/components/dice/RollButton";
 import { ResultPopup } from "@/components/dice/ResultPopup";
 import { LeaveButton } from "@/components/game/LeaveButton";
@@ -20,7 +21,7 @@ import { NextPlayerPill } from "@/components/game/NextPlayerPill";
 import { RollHistoryPill } from "@/components/game/RollHistoryPill";
 import { RollHistoryDialog } from "@/components/game/RollHistoryDialog";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { playDiceClack, playResultChime } from "@/lib/sound";
+import { playDiceClack, playResultChime, ROLL_PRESS_SOUND_DURATION_MS } from "@/lib/sound";
 import {
   recordRollAction,
   setCurrentPlayerAction,
@@ -41,11 +42,13 @@ import {
   DEFAULT_HAND,
   flattenHand,
   pruneEmptyEnabledEntries,
+  type DieInstance,
   type DieSides,
   type HandEntry,
 } from "@/lib/hand";
 import type { PlayerSummary } from "@/lib/players";
 import { computeRollData, type RollSummary } from "@/lib/rolls";
+import type { GameSettings } from "@/lib/db/schema";
 
 type RollState = "idle" | "rolling" | "result";
 type ActiveDialog = "players" | "hand" | null;
@@ -61,6 +64,8 @@ type RollResult = {
   max: number;
 };
 
+type RollMode = NonNullable<GameSettings["mode"]>;
+
 type GameViewProps = {
   hash: string;
   initialName: string;
@@ -68,6 +73,7 @@ type GameViewProps = {
   initialPlayers: PlayerSummary[];
   initialCurrentPlayerId: number;
   initialRolls: RollSummary[];
+  initialMode: RollMode;
 };
 
 export function GameView({
@@ -77,6 +83,7 @@ export function GameView({
   initialPlayers,
   initialCurrentPlayerId,
   initialRolls,
+  initialMode,
 }: GameViewProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -122,6 +129,10 @@ export function GameView({
 
   const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
 
+  const [mode, setMode] = useState<RollMode>(initialMode);
+  const [dice3DActive, setDice3DActive] = useState(false);
+  const dice3DRef = useRef<Dice3DAreaHandle>(null);
+
   const [rollState, setRollState] = useState<RollState>("idle");
   const [faces, setFaces] = useState<Record<string, number>>({});
   const [result, setResult] = useState<RollResult | null>(null);
@@ -150,6 +161,8 @@ export function GameView({
     setFaces({});
     setResult(null);
     setRollState("idle");
+    setDice3DActive(false);
+    dice3DRef.current?.clear();
 
     void setCurrentPlayerAction(hash, playerId);
   }
@@ -270,44 +283,40 @@ export function GameView({
     );
   }
 
-  function handleRoll() {
-    if (rollState !== "idle" || diceInstances.length === 0 || !currentPlayer?.enabled) return;
-
-    clearRollTimers();
-    setRollState("rolling");
-    setSettled({});
+  /** Builds the result banner + roll history entry from every die's final value, shared by both roll modes. */
+  async function finishRoll(finalFaces: Record<string, number>) {
+    const rollData = computeRollData(diceInstances.map((d) => ({ sides: d.sides, value: finalFaces[d.key] })));
+    setResult({
+      playerName: currentPlayer?.name ?? "Unknown player",
+      playerColor: currentPlayer?.color ?? "#9ca3af",
+      dice: diceInstances.map((d) => ({ key: d.key, sides: d.sides, value: finalFaces[d.key] })),
+      sum: rollData.sum,
+      avg: rollData.avg,
+      median: rollData.median,
+      min: rollData.min,
+      max: rollData.max,
+    });
+    setRollState("result");
+    playResultChime();
+    // Reset every die's tumble back to rest now that the result banner is
+    // about to show — values stay, positions/rotations reset.
     setTumble({});
 
+    if (currentPlayer) {
+      const response = await recordRollAction(hash, currentPlayer.id, rollData);
+      if (response.ok) {
+        setRolls((prev) => [response.data.roll, ...prev]);
+      }
+    }
+  }
+
+  function runRoll2D() {
     const finalFaces: Record<string, number> = {};
     let settledCount = 0;
 
     function scheduleReveal() {
-      const timeoutId = setTimeout(async () => {
-        const rollData = computeRollData(
-          diceInstances.map((d) => ({ sides: d.sides, value: finalFaces[d.key] })),
-        );
-        setResult({
-          playerName: currentPlayer?.name ?? "Unknown player",
-          playerColor: currentPlayer?.color ?? "#9ca3af",
-          dice: diceInstances.map((d) => ({ key: d.key, sides: d.sides, value: finalFaces[d.key] })),
-          sum: rollData.sum,
-          avg: rollData.avg,
-          median: rollData.median,
-          min: rollData.min,
-          max: rollData.max,
-        });
-        setRollState("result");
-        playResultChime();
-        // Reset every die's tumble back to rest now that the result banner
-        // is about to show — values stay, positions/rotations reset.
-        setTumble({});
-
-        if (currentPlayer) {
-          const response = await recordRollAction(hash, currentPlayer.id, rollData);
-          if (response.ok) {
-            setRolls((prev) => [response.data.roll, ...prev]);
-          }
-        }
+      const timeoutId = setTimeout(() => {
+        void finishRoll(finalFaces);
       }, randomRevealDelay());
       timersRef.current.timeouts.push(timeoutId);
     }
@@ -348,6 +357,112 @@ export function GameView({
     });
   }
 
+  /**
+   * dice-box (the 3D physics engine) has no coin/d2 die type in its theme,
+   * so coins get their own lightweight flip animation (reusing the 2D
+   * tumble/flicker) for as long as the real physics roll is running,
+   * instead of just sitting there inert while the other dice tumble. Both
+   * are combined into one result once the physics settles. Falls back to
+   * instant rolls for everyone if the 3D canvas isn't ready or its roll
+   * fails, so a broken/loading 3D view never blocks a roll.
+   */
+  async function runRoll3D() {
+    // A coin-only hand never calls dice3DRef.roll() below (dice-box's own
+    // auto-clear-on-roll never runs), so clear explicitly every time —
+    // otherwise a previous player's dice would keep sitting in the scene.
+    dice3DRef.current?.clear();
+    setDice3DActive(true);
+
+    const coinDice = diceInstances.filter((die) => die.sides === 2);
+    const polyhedralDice: DieInstance[] = diceInstances.filter((die) => die.sides !== 2);
+    const finalFaces: Record<string, number> = {};
+
+    let coinFlipInterval: ReturnType<typeof setInterval> | undefined;
+    if (coinDice.length > 0) {
+      coinFlipInterval = setInterval(() => {
+        coinDice.forEach((die) => {
+          setFaces((prev) => ({ ...prev, [die.key]: rollDie(2) }));
+          setTumble((prev) => ({ ...prev, [die.key]: randomTumble(1) }));
+        });
+      }, 120);
+      timersRef.current.timeouts.push(coinFlipInterval);
+    }
+
+    // dice-box doesn't expose a clean "this one die just landed" event, so
+    // each polyhedral die gets its own simulated landing clack at a
+    // randomized point during the roll — same timing range 2D dice use —
+    // instead of one clack lumped at the very end.
+    const clackTimers = polyhedralDice.map((die) =>
+      setTimeout(() => playDiceClack(die.sides, true), randomRollDuration()),
+    );
+    clackTimers.forEach((id) => timersRef.current.timeouts.push(id));
+
+    if (polyhedralDice.length > 0) {
+      try {
+        const results = dice3DRef.current ? await dice3DRef.current.roll(polyhedralDice) : {};
+        polyhedralDice.forEach((die) => {
+          finalFaces[die.key] = results[die.key] ?? rollDie(die.sides);
+        });
+      } catch {
+        polyhedralDice.forEach((die) => {
+          finalFaces[die.key] = rollDie(die.sides);
+        });
+      }
+    } else if (coinDice.length > 0) {
+      // No polyhedral dice to wait on — still give the coin flip a moment
+      // to play rather than resolving the "roll" instantly.
+      await new Promise<void>((resolve) => {
+        const timeoutId = setTimeout(resolve, randomRollDuration());
+        timersRef.current.timeouts.push(timeoutId);
+      });
+    }
+
+    clackTimers.forEach(clearTimeout);
+    if (coinFlipInterval !== undefined) clearInterval(coinFlipInterval);
+    coinDice.forEach((die) => {
+      finalFaces[die.key] = rollDie(2);
+    });
+    // Coins don't go through dice-box at all, so they get their own landing
+    // sound here instead of one of the staggered polyhedral clacks above.
+    if (coinDice.length > 0) playDiceClack(2, true);
+
+    // Fade the 3D canvas back out and reveal the same flat, legible sprites
+    // 2D mode uses — the physics animation is a transient flourish, not
+    // where the player is meant to read the result off.
+    setDice3DActive(false);
+    setFaces(finalFaces);
+    setTumble({});
+    setSettled(Object.fromEntries(diceInstances.map((die) => [die.key, true])));
+
+    const timeoutId = setTimeout(() => {
+      void finishRoll(finalFaces);
+    }, randomRevealDelay());
+    timersRef.current.timeouts.push(timeoutId);
+  }
+
+  function handleRoll() {
+    if (rollState !== "idle" || diceInstances.length === 0 || !currentPlayer?.enabled) return;
+
+    clearRollTimers();
+    setRollState("rolling");
+    setSettled({});
+    setTumble({});
+    setDice3DActive(false);
+
+    // The Roll button's own press sound (a ~1.5s "shake") plays the moment
+    // it's clicked, via GlobalClickSound — wait for it to finish before the
+    // dice actually start moving/making their own sounds, so the two don't
+    // overlap and clash.
+    const timeoutId = setTimeout(() => {
+      if (mode === "3d") {
+        void runRoll3D();
+      } else {
+        runRoll2D();
+      }
+    }, ROLL_PRESS_SOUND_DURATION_MS);
+    timersRef.current.timeouts.push(timeoutId);
+  }
+
   function handleDismissResult() {
     setResult(null);
     setRollState("idle");
@@ -376,7 +491,12 @@ export function GameView({
             <div className="relative">
               <SettingsButton onClick={() => setSettingsOpen(true)} />
               {settingsOpen && (
-                <SettingsMenu hash={hash} onDismiss={() => setSettingsOpen(false)} />
+                <SettingsMenu
+                  hash={hash}
+                  mode={mode}
+                  onModeChange={setMode}
+                  onDismiss={() => setSettingsOpen(false)}
+                />
               )}
             </div>
           }
@@ -395,6 +515,7 @@ export function GameView({
           color={currentPlayer?.color}
           blurred={resultShowing}
         />
+        {mode === "3d" && <Dice3DArea ref={dice3DRef} active={dice3DActive} />}
 
         <div className={dimWhenResult}>
           <CurrentPlayerBadge player={currentPlayer} onClick={() => setEditPlayerOpen(true)} />

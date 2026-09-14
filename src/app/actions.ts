@@ -6,7 +6,9 @@ import {
   findGameByHash,
   updateGame,
   updateGameCurrentPlayer,
+  updateGameSettings,
 } from "@/lib/db/games";
+import type { GameSettings } from "@/lib/db/schema";
 import {
   createPlayer,
   listPlayersForGame,
@@ -161,6 +163,17 @@ export async function setCurrentPlayerAction(hash: string, playerId: number): Pr
   if (!game) return { ok: false, error: "Game not found." };
 
   await updateGameCurrentPlayer(game.id, playerId);
+  return { ok: true, data: undefined };
+}
+
+export async function updateGameModeAction(
+  hash: string,
+  mode: NonNullable<GameSettings["mode"]>,
+): Promise<ActionResult> {
+  const game = await findGameByHash(hash);
+  if (!game) return { ok: false, error: "Game not found." };
+
+  await updateGameSettings(game.id, { ...game.settings, mode });
   return { ok: true, data: undefined };
 }
 

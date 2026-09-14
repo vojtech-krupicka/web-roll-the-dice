@@ -118,6 +118,14 @@ export function playClick(): void {
 /** Real "die shuffle" clips for the Roll/OK FAB press — one is picked at random each press. */
 const ROLL_PRESS_CLIPS: string[] = ["/sounds/dice-shake-1.ogg", "/sounds/dice-shake-2.ogg", "/sounds/dice-shake-3.ogg"];
 
+/**
+ * How long the longest roll-press clip runs (~1.52s) plus a small margin —
+ * the actual roll (dice movement/throw sounds) should wait this long after
+ * the Roll button is pressed so the shake sound finishes before the throw
+ * sounds start, instead of the two overlapping and clashing.
+ */
+export const ROLL_PRESS_SOUND_DURATION_MS = 1550;
+
 /** The Roll/OK FAB's own sound — lower and a touch richer, with a short upward pitch bend. */
 function playSynthRollSound(): void {
   const ctx = getContext();

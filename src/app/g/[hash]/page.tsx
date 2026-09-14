@@ -37,6 +37,7 @@ export default async function GamePage({ params }: GamePageProps) {
         initialPlayers={players}
         initialCurrentPlayerId={currentPlayerId}
         initialRolls={rolls}
+        initialMode={game.settings.mode ?? "2d"}
       />
     </Suspense>
   );
