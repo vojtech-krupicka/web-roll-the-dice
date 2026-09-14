@@ -369,14 +369,6 @@ export function GameView({
    * fails, so a broken/loading 3D view never blocks a roll.
    */
   async function runRoll3D() {
-    // A coin-only hand never calls dice3DRef.roll() below (dice-box's own
-    // auto-clear-on-roll never runs), so clear explicitly every time —
-    // otherwise a previous player's dice would keep sitting in the scene.
-    // (dice3DActive itself is already set by handleRoll, the moment the
-    // press was registered, so the flat sprites are hidden from the very
-    // start of the roll — not just once the physics animation begins.)
-    dice3DRef.current?.clear();
-
     const coinDice = diceInstances.filter((die) => die.sides === 2);
     const polyhedralDice: DieInstance[] = diceInstances.filter((die) => die.sides !== 2);
     const finalFaces: Record<string, number> = {};
@@ -458,8 +450,16 @@ export function GameView({
     // In 3D mode, hide the flat sprites (except coins) the instant the
     // press registers — not just once the physics animation actually
     // starts — so they don't sit there showing last roll's stale faces
-    // while the shake sound plays.
-    setDice3DActive(mode === "3d");
+    // while the shake sound plays. Clear the 3D scene right away too — a
+    // second roll would otherwise reveal the *previous* roll's dice still
+    // sitting in their landed spots for that same instant, since dice-box
+    // itself only clears at the start of its own next roll() call.
+    if (mode === "3d") {
+      dice3DRef.current?.clear();
+      setDice3DActive(true);
+    } else {
+      setDice3DActive(false);
+    }
 
     // The Roll button's own press sound (a ~1.5s "shake") plays the moment
     // it's clicked, via GlobalClickSound — wait for it to finish before the
