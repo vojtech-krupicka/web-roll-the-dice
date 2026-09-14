@@ -372,8 +372,10 @@ export function GameView({
     // A coin-only hand never calls dice3DRef.roll() below (dice-box's own
     // auto-clear-on-roll never runs), so clear explicitly every time —
     // otherwise a previous player's dice would keep sitting in the scene.
+    // (dice3DActive itself is already set by handleRoll, the moment the
+    // press was registered, so the flat sprites are hidden from the very
+    // start of the roll — not just once the physics animation begins.)
     dice3DRef.current?.clear();
-    setDice3DActive(true);
 
     const coinDice = diceInstances.filter((die) => die.sides === 2);
     const polyhedralDice: DieInstance[] = diceInstances.filter((die) => die.sides !== 2);
@@ -430,15 +432,16 @@ export function GameView({
     // sound here instead of one of the staggered polyhedral clacks above.
     if (coinDice.length > 0) playDiceClack(2, true);
 
-    // Fade the 3D canvas back out and reveal the same flat, legible sprites
-    // 2D mode uses — the physics animation is a transient flourish, not
-    // where the player is meant to read the result off.
-    setDice3DActive(false);
+    // Queue up the settled flat sprites now, but keep the 3D canvas showing
+    // them at rest — swapping back to the flat sprites happens below, timed
+    // to land exactly when the result banner appears, so the model swap is
+    // covered by the banner instead of flashing on its own first.
     setFaces(finalFaces);
     setTumble({});
     setSettled(Object.fromEntries(diceInstances.map((die) => [die.key, true])));
 
     const timeoutId = setTimeout(() => {
+      setDice3DActive(false);
       void finishRoll(finalFaces);
     }, randomRevealDelay());
     timersRef.current.timeouts.push(timeoutId);
@@ -452,7 +455,11 @@ export function GameView({
     setRollState("rolling");
     setSettled({});
     setTumble({});
-    setDice3DActive(false);
+    // In 3D mode, hide the flat sprites (except coins) the instant the
+    // press registers — not just once the physics animation actually
+    // starts — so they don't sit there showing last roll's stale faces
+    // while the shake sound plays.
+    setDice3DActive(mode === "3d");
 
     // The Roll button's own press sound (a ~1.5s "shake") plays the moment
     // it's clicked, via GlobalClickSound — wait for it to finish before the
