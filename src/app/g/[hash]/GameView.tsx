@@ -296,7 +296,8 @@ export function GameView({
         finalFaces[die.key] = finalValue;
         setFaces((prev) => ({ ...prev, [die.key]: finalValue }));
         setSettled((prev) => ({ ...prev, [die.key]: true }));
-        setTumble((prev) => ({ ...prev, [die.key]: DIE_REST_TUMBLE }));
+        // Leave this die's tumble as-is — it stays put where it landed until
+        // the whole roll finishes, rather than snapping back individually.
 
         settledCount += 1;
         if (settledCount === diceInstances.length) {
@@ -314,6 +315,9 @@ export function GameView({
             max: rollData.max,
           });
           setRollState("result");
+          // Reset every die's tumble back to rest now that the result banner
+          // is about to show — values stay, positions/rotations reset.
+          setTumble({});
 
           if (currentPlayer) {
             const response = await recordRollAction(hash, currentPlayer.id, rollData);
