@@ -1,3 +1,4 @@
+import type { DieTumble } from "@/lib/dice";
 import type { DieSides } from "@/lib/hand";
 import { DieSprite } from "./DieSprite";
 
@@ -7,6 +8,8 @@ export type DropAreaDie = {
   face: number;
   /** False while this die is still mid-roll — dims it and drops its glow until it settles. */
   settled: boolean;
+  /** Random offset/rotation applied while mid-roll, for the tumble effect. */
+  tumble: DieTumble;
 };
 
 type DropAreaProps = {
@@ -43,17 +46,22 @@ export function DropArea({ dice, color, blurred }: DropAreaProps) {
       />
       <div className="absolute top-[62px] right-0 bottom-[148px] left-0 flex flex-wrap content-center items-center justify-center gap-5">
         {dice.map((die) => (
-          <DieSprite
+          <div
             key={die.key}
-            sides={die.sides}
-            value={die.face}
-            color={color}
-            className={`transition-all duration-150 ${SIZE_CLASS[die.sides] ?? DEFAULT_SIZE_CLASS} ${
-              die.settled
-                ? "opacity-100 drop-shadow-[0_0_8px_rgba(34,211,238,0.4)] brightness-100"
-                : "opacity-80 drop-shadow-none brightness-[0.55]"
-            }`}
-          />
+            className="transition-transform duration-100 ease-out"
+            style={{ transform: `translate(${die.tumble.x}px, ${die.tumble.y}px) rotate(${die.tumble.rot}deg)` }}
+          >
+            <DieSprite
+              sides={die.sides}
+              value={die.face}
+              color={color}
+              className={`transition-all duration-150 ${SIZE_CLASS[die.sides] ?? DEFAULT_SIZE_CLASS} ${
+                die.settled
+                  ? "opacity-100 drop-shadow-[0_0_8px_rgba(34,211,238,0.4)] brightness-100"
+                  : "opacity-80 drop-shadow-none brightness-[0.55]"
+              }`}
+            />
+          </div>
         ))}
       </div>
     </div>

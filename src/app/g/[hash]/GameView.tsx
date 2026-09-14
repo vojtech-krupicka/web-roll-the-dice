@@ -26,7 +26,14 @@ import {
   updatePlayerAction,
   updatePlayerHandAction,
 } from "@/app/actions";
-import { ROLL_TICK_INTERVAL_MS, randomRollDuration, rollDie } from "@/lib/dice";
+import {
+  DIE_REST_TUMBLE,
+  ROLL_TICK_INTERVAL_MS,
+  randomRollDuration,
+  randomTumble,
+  rollDie,
+  type DieTumble,
+} from "@/lib/dice";
 import {
   DEFAULT_HAND,
   flattenHand,
@@ -116,6 +123,7 @@ export function GameView({
   const [faces, setFaces] = useState<Record<string, number>>({});
   const [result, setResult] = useState<RollResult | null>(null);
   const [settled, setSettled] = useState<Record<string, boolean>>({});
+  const [tumble, setTumble] = useState<Record<string, DieTumble>>({});
   const timersRef = useRef<{
     intervals: ReturnType<typeof setInterval>[];
     timeouts: ReturnType<typeof setTimeout>[];
@@ -270,6 +278,7 @@ export function GameView({
     clearRollTimers();
     setRollState("rolling");
     setSettled({});
+    setTumble({});
 
     const finalFaces: Record<string, number> = {};
     let settledCount = 0;
@@ -277,6 +286,7 @@ export function GameView({
     diceInstances.forEach((die) => {
       const intervalId = setInterval(() => {
         setFaces((prev) => ({ ...prev, [die.key]: rollDie(die.sides) }));
+        setTumble((prev) => ({ ...prev, [die.key]: randomTumble() }));
       }, ROLL_TICK_INTERVAL_MS);
       timersRef.current.intervals.push(intervalId);
 
@@ -286,6 +296,7 @@ export function GameView({
         finalFaces[die.key] = finalValue;
         setFaces((prev) => ({ ...prev, [die.key]: finalValue }));
         setSettled((prev) => ({ ...prev, [die.key]: true }));
+        setTumble((prev) => ({ ...prev, [die.key]: DIE_REST_TUMBLE }));
 
         settledCount += 1;
         if (settledCount === diceInstances.length) {
@@ -358,6 +369,7 @@ export function GameView({
             sides: die.sides,
             face: faces[die.key] ?? 1,
             settled: rollState !== "rolling" || settled[die.key] === true,
+            tumble: tumble[die.key] ?? DIE_REST_TUMBLE,
           }))}
           color={currentPlayer?.color}
           blurred={resultShowing}

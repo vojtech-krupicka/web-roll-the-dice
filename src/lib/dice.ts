@@ -31,3 +31,17 @@ export function rollDie(sides: number): number {
 export function rollD6(): number {
   return rollDie(6);
 }
+
+export type DieTumble = { x: number; y: number; rot: number };
+
+/** Rest position — no offset, no rotation. */
+export const DIE_REST_TUMBLE: DieTumble = { x: 0, y: 0, rot: 0 };
+
+/** A small random offset + rotation for the CSS "tumble" effect while a die is mid-roll. */
+export function randomTumble(): DieTumble {
+  return {
+    x: Math.random() * 20 - 10,
+    y: Math.random() * 20 - 10,
+    rot: Math.random() * 70 - 35,
+  };
+}
