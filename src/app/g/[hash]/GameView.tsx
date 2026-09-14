@@ -33,6 +33,7 @@ import {
   randomTumble,
   rollDie,
   tickIntervalForProgress,
+  tumbleIntensityForProgress,
   type DieTumble,
 } from "@/lib/dice";
 import {
@@ -332,7 +333,7 @@ export function GameView({
 
         setFaces((prev) => ({ ...prev, [die.key]: rollDie(die.sides) }));
         // Tumble eases off (smaller moves) the closer this die is to settling.
-        setTumble((prev) => ({ ...prev, [die.key]: randomTumble(1 - progress) }));
+        setTumble((prev) => ({ ...prev, [die.key]: randomTumble(tumbleIntensityForProgress(progress)) }));
 
         const timeoutId = setTimeout(tick, tickIntervalForProgress(progress));
         timersRef.current.timeouts.push(timeoutId);

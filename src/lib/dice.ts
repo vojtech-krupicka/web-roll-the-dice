@@ -26,12 +26,33 @@ export function randomRevealDelay(): number {
 }
 
 /**
+ * Eases raw 0..1 progress so most of a roll stays fast/energetic and the
+ * slowdown is concentrated right at the end, rather than spread evenly
+ * across the whole duration — a cubic ease-in.
+ */
+function easeInCubic(t: number): number {
+  return t * t * t;
+}
+
+/**
  * The delay before a rolling die's next tick, given how far through its own
- * roll duration it is (0 = just started, 1 = about to settle). Ticks start
- * fast and space out as the die "decelerates" toward settling.
+ * roll duration it is (0 = just started, 1 = about to settle). Ticks stay
+ * close to the starting cadence for most of the roll, then space out sharply
+ * right before settling — this governs both the tumble updates and the
+ * face-value flicker, so both visibly slow down together near the end.
  */
 export function tickIntervalForProgress(progress: number): number {
-  return ROLL_TICK_INTERVAL_MS + progress * (ROLL_TICK_MAX_INTERVAL_MS - ROLL_TICK_INTERVAL_MS);
+  return ROLL_TICK_INTERVAL_MS + easeInCubic(progress) * (ROLL_TICK_MAX_INTERVAL_MS - ROLL_TICK_INTERVAL_MS);
+}
+
+/**
+ * How much of the full tumble range (translate + rotation) to use, given how
+ * far through its roll duration a die is. Stays near full intensity for most
+ * of the roll and drops off sharply near the end, so the tumble itself
+ * (not just the tick rate) visibly decelerates.
+ */
+export function tumbleIntensityForProgress(progress: number): number {
+  return 1 - easeInCubic(progress);
 }
 
 /**
