@@ -15,7 +15,7 @@ export function RollButton({ disabled, rolling, showResult, onClick }: RollButto
       type="button"
       disabled={disabled}
       onClick={onClick}
-      data-sound="roll"
+      data-sound={showResult ? undefined : "roll"}
       className={`cta-gradient absolute bottom-[-38px] left-1/2 z-[7] flex h-[168px] w-[168px] -translate-x-1/2 cursor-pointer flex-col items-center justify-center gap-1 rounded-full transition-all duration-200 active:scale-95 disabled:cursor-not-allowed ${
         showResult
           ? "shadow-[0_0_0_6px_var(--bg-stop-2),0_0_46px_rgba(139,92,246,0.8)] hover:scale-[1.03]"

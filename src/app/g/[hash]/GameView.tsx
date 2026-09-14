@@ -20,7 +20,7 @@ import { NextPlayerPill } from "@/components/game/NextPlayerPill";
 import { RollHistoryPill } from "@/components/game/RollHistoryPill";
 import { RollHistoryDialog } from "@/components/game/RollHistoryDialog";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
-import { playDiceClack } from "@/lib/sound";
+import { playDiceClack, playResultChime } from "@/lib/sound";
 import {
   recordRollAction,
   setCurrentPlayerAction,
@@ -297,6 +297,7 @@ export function GameView({
           max: rollData.max,
         });
         setRollState("result");
+        playResultChime();
         // Reset every die's tumble back to rest now that the result banner
         // is about to show — values stay, positions/rotations reset.
         setTumble({});

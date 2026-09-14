@@ -1,9 +1,12 @@
 "use client";
 
 /**
- * Small synthesized sound effects via the Web Audio API — no audio files,
- * so no licensing to track. Everything is short percussive blips/noise
- * bursts built from oscillators and a generated noise buffer.
+ * Sound effects via the Web Audio API. Most are synthesized (no files, no
+ * licensing to track); a few slots can instead play real audio clips —
+ * drop files into `public/sounds/` and list them in the arrays below, one
+ * candidate per line. Each call randomly picks a clip and a playback pitch;
+ * if a slot's array is empty, or the file fails to load, it falls back to
+ * the synthesized sound automatically.
  */
 
 let audioCtx: AudioContext | null = null;
@@ -19,6 +22,64 @@ function getContext(): AudioContext | null {
 
 const MASTER_VOLUME = 0.25;
 
+const MUTE_STORAGE_KEY = "dice-app-muted";
+let muted = typeof window !== "undefined" && window.localStorage.getItem(MUTE_STORAGE_KEY) === "1";
+
+export function isMuted(): boolean {
+  return muted;
+}
+
+export function setMuted(value: boolean): void {
+  muted = value;
+  if (typeof window !== "undefined") {
+    window.localStorage.setItem(MUTE_STORAGE_KEY, value ? "1" : "0");
+  }
+}
+
+/** Decoded-clip cache, keyed by URL, so repeated plays don't re-fetch/re-decode. */
+const clipCache = new Map<string, Promise<AudioBuffer | null>>();
+
+function loadClip(ctx: AudioContext, url: string): Promise<AudioBuffer | null> {
+  let cached = clipCache.get(url);
+  if (!cached) {
+    cached = fetch(url)
+      .then((res) => (res.ok ? res.arrayBuffer() : Promise.reject(new Error(String(res.status)))))
+      .then((data) => ctx.decodeAudioData(data))
+      .catch(() => null);
+    clipCache.set(url, cached);
+  }
+  return cached;
+}
+
+/**
+ * Plays a random clip from `urls` at a random pitch within `pitchRange`
+ * (a `playbackRate` multiplier, so `[0.9, 1.1]` is ±10%). Falls back to
+ * `fallback()` when there are no candidates, or the chosen clip can't be
+ * loaded/decoded.
+ */
+function playRandomClip(urls: string[], pitchRange: [number, number], volume: number, fallback: () => void): void {
+  const ctx = getContext();
+  if (!ctx || urls.length === 0) {
+    fallback();
+    return;
+  }
+
+  const url = urls[Math.floor(Math.random() * urls.length)];
+  void loadClip(ctx, url).then((buffer) => {
+    if (!buffer) {
+      fallback();
+      return;
+    }
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = pitchRange[0] + Math.random() * (pitchRange[1] - pitchRange[0]);
+    const gain = ctx.createGain();
+    gain.gain.value = volume;
+    source.connect(gain).connect(ctx.destination);
+    source.start();
+  });
+}
+
 /** A gain node with a fast linear attack and an exponential decay to silence. */
 function envelope(ctx: AudioContext, attack: number, decay: number, peak: number): GainNode {
   const gain = ctx.createGain();
@@ -29,8 +90,11 @@ function envelope(ctx: AudioContext, attack: number, decay: number, peak: number
   return gain;
 }
 
-/** Short, crisp UI click for general button taps. */
-export function playClick(): void {
+/** Real click clip for general button taps — no pitch variation, it's a neutral UI sound. */
+const CLICK_CLIPS: string[] = ["/sounds/mouseclick.ogg"];
+
+/** Fallback click if the clip is missing — short, crisp synthesized blip. */
+function playSynthClick(): void {
   const ctx = getContext();
   if (!ctx) return;
 
@@ -45,8 +109,17 @@ export function playClick(): void {
   osc.stop(ctx.currentTime + 0.08);
 }
 
+/** Short, crisp UI click for general button taps. */
+export function playClick(): void {
+  if (muted) return;
+  playRandomClip(CLICK_CLIPS, [1, 1], MASTER_VOLUME * 0.9, playSynthClick);
+}
+
+/** Real "die shuffle" clips for the Roll/OK FAB press — one is picked at random each press. */
+const ROLL_PRESS_CLIPS: string[] = ["/sounds/dice-shake-1.ogg", "/sounds/dice-shake-2.ogg", "/sounds/dice-shake-3.ogg"];
+
 /** The Roll/OK FAB's own sound — lower and a touch richer, with a short upward pitch bend. */
-export function playRollSound(): void {
+function playSynthRollSound(): void {
   const ctx = getContext();
   if (!ctx) return;
 
@@ -59,6 +132,11 @@ export function playRollSound(): void {
   osc.connect(gain).connect(ctx.destination);
   osc.start();
   osc.stop(ctx.currentTime + 0.18);
+}
+
+export function playRollSound(): void {
+  if (muted) return;
+  playRandomClip(ROLL_PRESS_CLIPS, [0.95, 1.05], MASTER_VOLUME * 0.9, playSynthRollSound);
 }
 
 /** A short white-noise buffer, used as the raw material for percussive impacts. */
@@ -84,12 +162,38 @@ const CLACK_TONE: Partial<Record<number, number>> = {
   100: 750,
 };
 
+/** Real "die roll" clips for tumble ticks/landings — one is picked at random per tick. */
+const DICE_ROLL_CLIPS: string[] = [
+  "/sounds/die-throw-1.ogg",
+  "/sounds/die-throw-2.ogg",
+  "/sounds/die-throw-3.ogg",
+  "/sounds/die-throw-4.ogg",
+];
+
+/** Die-size -> playbackRate multiplier, so bigger dice sound lower-pitched. */
+const CLACK_PITCH: Partial<Record<number, number>> = {
+  2: 1.35,
+  4: 1.2,
+  6: 1.0,
+  8: 0.9,
+  10: 0.82,
+  12: 0.75,
+  20: 0.65,
+  100: 0.55,
+};
+
+/** A randomized ±10% pitch range around a die size's base pitch. */
+function clackPitchRange(sides: number): [number, number] {
+  const base = CLACK_PITCH[sides] ?? 1;
+  return [base * 0.9, base * 1.1];
+}
+
 /**
  * One die's "clack" against the table — a filtered noise transient plus a
  * short low thud for body, pitched by the die's own size. `final` makes the
  * landing hit a little louder/longer than the mid-roll tumble ticks.
  */
-export function playDiceClack(sides: number, final = false): void {
+function playSynthDiceClack(sides: number, final = false): void {
   const ctx = getContext();
   if (!ctx) return;
 
@@ -116,4 +220,40 @@ export function playDiceClack(sides: number, final = false): void {
   thud.connect(thudGain).connect(ctx.destination);
   thud.start(now);
   thud.stop(now + (final ? 0.1 : 0.08));
+}
+
+export function playDiceClack(sides: number, final = false): void {
+  if (muted) return;
+  const volume = final ? MASTER_VOLUME * 0.8 : MASTER_VOLUME * 0.55;
+  playRandomClip(DICE_ROLL_CLIPS, clackPitchRange(sides), volume, () => playSynthDiceClack(sides, final));
+}
+
+/** Real fanfare clip for the result banner reveal — swap the file at this path to change it. */
+const RESULT_CHIME_CLIPS: string[] = ["/sounds/roll-banner-chime.mp3"];
+
+/** Fallback fanfare if the clip is missing — a quick ascending three-note arpeggio. */
+function playSynthChime(): void {
+  const ctx = getContext();
+  if (!ctx) return;
+
+  const notes = [523.25, 659.25, 784.0];
+  notes.forEach((freq, i) => {
+    const start = ctx.currentTime + i * 0.09;
+    const osc = ctx.createOscillator();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(freq, start);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.linearRampToValueAtTime(MASTER_VOLUME * 0.8, start + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.4);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(start);
+    osc.stop(start + 0.42);
+  });
+}
+
+/** The result banner's fanfare, played once when it appears. */
+export function playResultChime(): void {
+  if (muted) return;
+  playRandomClip(RESULT_CHIME_CLIPS, [1, 1], MASTER_VOLUME * 1.1, playSynthChime);
 }
