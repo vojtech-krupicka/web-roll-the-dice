@@ -15,13 +15,21 @@ type SettingsMenuProps = {
   hash: string;
   mode: RollMode;
   onModeChange: (mode: RollMode) => void;
+  /** Blocks changing the roll mode mid-roll — switching out from under an in-flight roll can't be cancelled cleanly. */
+  modeChangeDisabled?: boolean;
   onDismiss: () => void;
 };
 
 type View = "menu" | "legend" | "about";
 
 /** Top-bar Settings popup: Legend / About. Leave lives directly in the top bar now. */
-export function SettingsMenu({ hash, mode, onModeChange, onDismiss }: SettingsMenuProps) {
+export function SettingsMenu({
+  hash,
+  mode,
+  onModeChange,
+  modeChangeDisabled,
+  onDismiss,
+}: SettingsMenuProps) {
   const [view, setView] = useState<View>("menu");
   const [muted, setMutedState] = useState(() => isMuted());
 
@@ -44,8 +52,18 @@ export function SettingsMenu({ hash, mode, onModeChange, onDismiss }: SettingsMe
       >
         <div className="flex w-full items-center gap-3 rounded-xl px-4 py-3">
           <Box size={18} className={mode === "3d" ? undefined : "text-muted"} />
-          <span className="flex-1 text-left text-sm font-semibold">3D dice</span>
-          <Switch checked={mode === "3d"} onChange={handleModeChange} aria-label="Toggle 3D roll mode" />
+          <span className="flex flex-1 items-center gap-1.5 text-left text-sm font-semibold">
+            3D dice
+            <span className="rounded-full border border-accent-cyan/40 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-accent-cyan">
+              BETA
+            </span>
+          </span>
+          <Switch
+            checked={mode === "3d"}
+            onChange={handleModeChange}
+            disabled={modeChangeDisabled}
+            aria-label="Toggle 3D roll mode"
+          />
         </div>
         <div className="flex w-full items-center gap-3 rounded-xl px-4 py-3">
           {muted ? <VolumeX size={18} className="text-muted" /> : <Volume2 size={18} />}

@@ -523,6 +523,7 @@ export function GameView({
                   hash={hash}
                   mode={mode}
                   onModeChange={setMode}
+                  modeChangeDisabled={rollState !== "idle"}
                   onDismiss={() => setSettingsOpen(false)}
                 />
               )}
