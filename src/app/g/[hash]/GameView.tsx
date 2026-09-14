@@ -28,10 +28,11 @@ import {
 } from "@/app/actions";
 import {
   DIE_REST_TUMBLE,
-  ROLL_TICK_INTERVAL_MS,
+  randomRevealDelay,
   randomRollDuration,
   randomTumble,
   rollDie,
+  tickIntervalForProgress,
   type DieTumble,
 } from "@/lib/dice";
 import {
@@ -124,17 +125,12 @@ export function GameView({
   const [result, setResult] = useState<RollResult | null>(null);
   const [settled, setSettled] = useState<Record<string, boolean>>({});
   const [tumble, setTumble] = useState<Record<string, DieTumble>>({});
-  const timersRef = useRef<{
-    intervals: ReturnType<typeof setInterval>[];
-    timeouts: ReturnType<typeof setTimeout>[];
-  }>({ intervals: [], timeouts: [] });
+  const timersRef = useRef<{ timeouts: ReturnType<typeof setTimeout>[] }>({ timeouts: [] });
 
   const diceInstances = useMemo(() => flattenHand(hand), [hand]);
 
   function clearRollTimers() {
-    timersRef.current.intervals.forEach(clearInterval);
     timersRef.current.timeouts.forEach(clearTimeout);
-    timersRef.current.intervals = [];
     timersRef.current.timeouts = [];
   }
 
@@ -283,50 +279,66 @@ export function GameView({
     const finalFaces: Record<string, number> = {};
     let settledCount = 0;
 
-    diceInstances.forEach((die) => {
-      const intervalId = setInterval(() => {
-        setFaces((prev) => ({ ...prev, [die.key]: rollDie(die.sides) }));
-        setTumble((prev) => ({ ...prev, [die.key]: randomTumble() }));
-      }, ROLL_TICK_INTERVAL_MS);
-      timersRef.current.intervals.push(intervalId);
-
+    function scheduleReveal() {
       const timeoutId = setTimeout(async () => {
-        clearInterval(intervalId);
-        const finalValue = rollDie(die.sides);
-        finalFaces[die.key] = finalValue;
-        setFaces((prev) => ({ ...prev, [die.key]: finalValue }));
-        setSettled((prev) => ({ ...prev, [die.key]: true }));
-        // Leave this die's tumble as-is — it stays put where it landed until
-        // the whole roll finishes, rather than snapping back individually.
+        const rollData = computeRollData(
+          diceInstances.map((d) => ({ sides: d.sides, value: finalFaces[d.key] })),
+        );
+        setResult({
+          playerName: currentPlayer?.name ?? "Unknown player",
+          playerColor: currentPlayer?.color ?? "#9ca3af",
+          dice: diceInstances.map((d) => ({ key: d.key, sides: d.sides, value: finalFaces[d.key] })),
+          sum: rollData.sum,
+          avg: rollData.avg,
+          median: rollData.median,
+          min: rollData.min,
+          max: rollData.max,
+        });
+        setRollState("result");
+        // Reset every die's tumble back to rest now that the result banner
+        // is about to show — values stay, positions/rotations reset.
+        setTumble({});
 
-        settledCount += 1;
-        if (settledCount === diceInstances.length) {
-          const rollData = computeRollData(
-            diceInstances.map((d) => ({ sides: d.sides, value: finalFaces[d.key] })),
-          );
-          setResult({
-            playerName: currentPlayer?.name ?? "Unknown player",
-            playerColor: currentPlayer?.color ?? "#9ca3af",
-            dice: diceInstances.map((d) => ({ key: d.key, sides: d.sides, value: finalFaces[d.key] })),
-            sum: rollData.sum,
-            avg: rollData.avg,
-            median: rollData.median,
-            min: rollData.min,
-            max: rollData.max,
-          });
-          setRollState("result");
-          // Reset every die's tumble back to rest now that the result banner
-          // is about to show — values stay, positions/rotations reset.
-          setTumble({});
-
-          if (currentPlayer) {
-            const response = await recordRollAction(hash, currentPlayer.id, rollData);
-            if (response.ok) {
-              setRolls((prev) => [response.data.roll, ...prev]);
-            }
+        if (currentPlayer) {
+          const response = await recordRollAction(hash, currentPlayer.id, rollData);
+          if (response.ok) {
+            setRolls((prev) => [response.data.roll, ...prev]);
           }
         }
-      }, randomRollDuration());
+      }, randomRevealDelay());
+      timersRef.current.timeouts.push(timeoutId);
+    }
+
+    diceInstances.forEach((die) => {
+      const duration = randomRollDuration();
+      const startedAt = Date.now();
+
+      function tick() {
+        const progress = Math.min((Date.now() - startedAt) / duration, 1);
+
+        if (progress >= 1) {
+          const finalValue = rollDie(die.sides);
+          finalFaces[die.key] = finalValue;
+          setFaces((prev) => ({ ...prev, [die.key]: finalValue }));
+          setSettled((prev) => ({ ...prev, [die.key]: true }));
+          // Leave this die's tumble as-is — it stays put where it landed
+          // until the whole roll finishes, rather than snapping back
+          // individually.
+
+          settledCount += 1;
+          if (settledCount === diceInstances.length) scheduleReveal();
+          return;
+        }
+
+        setFaces((prev) => ({ ...prev, [die.key]: rollDie(die.sides) }));
+        // Tumble eases off (smaller moves) the closer this die is to settling.
+        setTumble((prev) => ({ ...prev, [die.key]: randomTumble(1 - progress) }));
+
+        const timeoutId = setTimeout(tick, tickIntervalForProgress(progress));
+        timersRef.current.timeouts.push(timeoutId);
+      }
+
+      const timeoutId = setTimeout(tick, tickIntervalForProgress(0));
       timersRef.current.timeouts.push(timeoutId);
     });
   }

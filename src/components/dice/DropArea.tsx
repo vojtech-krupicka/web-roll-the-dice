@@ -48,7 +48,7 @@ export function DropArea({ dice, color, blurred }: DropAreaProps) {
         {dice.map((die) => (
           <div
             key={die.key}
-            className="transition-transform duration-150 ease-out"
+            className="transition-transform duration-200 ease-out"
             style={{ transform: `translate(${die.tumble.x}px, ${die.tumble.y}px) rotate(${die.tumble.rot}deg)` }}
           >
             <DieSprite
