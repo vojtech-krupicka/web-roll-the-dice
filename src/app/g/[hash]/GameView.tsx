@@ -49,6 +49,7 @@ import {
 import type { PlayerSummary } from "@/lib/players";
 import { computeRollData, type RollSummary } from "@/lib/rolls";
 import type { GameSettings } from "@/lib/db/schema";
+import { prefersReducedMotion } from "@/lib/motion";
 
 type RollState = "idle" | "rolling" | "result";
 type ActiveDialog = "players" | "hand" | null;
@@ -313,6 +314,10 @@ export function GameView({
   }
 
   function runRoll2D() {
+    // With reduced motion, keep the same timing/sound so a roll doesn't
+    // feel broken or instant — just drop the spatial tumble and let dice
+    // settle in place while their faces flicker through values.
+    const reducedMotion = prefersReducedMotion();
     const finalFaces: Record<string, number> = {};
     let settledCount = 0;
 
@@ -347,7 +352,10 @@ export function GameView({
 
         setFaces((prev) => ({ ...prev, [die.key]: rollDie(die.sides) }));
         // Tumble eases off (smaller moves) the closer this die is to settling.
-        setTumble((prev) => ({ ...prev, [die.key]: randomTumble(tumbleIntensityForProgress(progress)) }));
+        setTumble((prev) => ({
+          ...prev,
+          [die.key]: reducedMotion ? DIE_REST_TUMBLE : randomTumble(tumbleIntensityForProgress(progress)),
+        }));
         playDiceClack(die.sides);
 
         const timeoutId = setTimeout(tick, tickIntervalForProgress(progress));
@@ -442,6 +450,11 @@ export function GameView({
   function handleRoll() {
     if (rollState !== "idle" || diceInstances.length === 0 || !currentPlayer?.enabled) return;
 
+    // With reduced motion, always take the 2D (flicker, no tumble) path —
+    // the 3D physics show is motion by definition, so there's no reduced
+    // version of it to fall back to beyond not playing it at all.
+    const use3D = mode === "3d" && !prefersReducedMotion();
+
     setSettingsOpen(false);
     clearRollTimers();
     setRollState("rolling");
@@ -454,7 +467,7 @@ export function GameView({
     // second roll would otherwise reveal the *previous* roll's dice still
     // sitting in their landed spots for that same instant, since dice-box
     // itself only clears at the start of its own next roll() call.
-    if (mode === "3d") {
+    if (use3D) {
       dice3DRef.current?.clear();
       setDice3DActive(true);
     } else {
@@ -466,7 +479,7 @@ export function GameView({
     // dice actually start moving/making their own sounds, so the two don't
     // overlap and clash.
     const timeoutId = setTimeout(() => {
-      if (mode === "3d") {
+      if (use3D) {
         void runRoll3D();
       } else {
         runRoll2D();
