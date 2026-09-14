@@ -20,6 +20,7 @@ import { NextPlayerPill } from "@/components/game/NextPlayerPill";
 import { RollHistoryPill } from "@/components/game/RollHistoryPill";
 import { RollHistoryDialog } from "@/components/game/RollHistoryDialog";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { playDiceClack } from "@/lib/sound";
 import {
   recordRollAction,
   setCurrentPlayerAction,
@@ -322,6 +323,7 @@ export function GameView({
           finalFaces[die.key] = finalValue;
           setFaces((prev) => ({ ...prev, [die.key]: finalValue }));
           setSettled((prev) => ({ ...prev, [die.key]: true }));
+          playDiceClack(die.sides, true);
           // Leave this die's tumble as-is — it stays put where it landed
           // until the whole roll finishes, rather than snapping back
           // individually.
@@ -334,6 +336,7 @@ export function GameView({
         setFaces((prev) => ({ ...prev, [die.key]: rollDie(die.sides) }));
         // Tumble eases off (smaller moves) the closer this die is to settling.
         setTumble((prev) => ({ ...prev, [die.key]: randomTumble(tumbleIntensityForProgress(progress)) }));
+        playDiceClack(die.sides);
 
         const timeoutId = setTimeout(tick, tickIntervalForProgress(progress));
         timersRef.current.timeouts.push(timeoutId);

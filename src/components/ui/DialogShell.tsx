@@ -82,6 +82,7 @@ export function DialogShell({
           type="button"
           onClick={onConfirm ?? onDismiss}
           disabled={confirmDisabled}
+          data-sound="roll"
           className="cta-gradient absolute bottom-[-38px] left-1/2 z-[4] flex h-[168px] w-[168px] -translate-x-1/2 cursor-pointer flex-col items-center justify-center gap-1 rounded-full shadow-[0_0_0_6px_var(--bg-stop-2),0_0_34px_rgba(139,92,246,0.55)] transition-all duration-200 hover:scale-[1.03] hover:shadow-[0_0_0_6px_var(--bg-stop-2),0_0_46px_rgba(139,92,246,0.8)] active:scale-95 disabled:cursor-not-allowed disabled:grayscale disabled:shadow-[0_0_0_6px_var(--bg-stop-2)] disabled:hover:scale-100"
         >
           <Check size={30} strokeWidth={3} className="text-[#0a0b14]" aria-hidden="true" />
