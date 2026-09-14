@@ -18,8 +18,7 @@ type HandPaneProps = {
  * Full-screen hand editor — covers the drop area while open. The add-die
  * grid is rendered inline in the SAME DialogShell instance (just swapping
  * title/content/confirm) rather than via a separately-mounted dialog, so
- * switching between the list and the grid doesn't remount the shell and
- * re-trigger its slide animation.
+ * switching between the list and the grid doesn't remount the shell.
  */
 export function HandPane({
   hand,
@@ -38,7 +37,6 @@ export function HandPane({
       <DialogShell
         title="Add die"
         bottomNav={bottomNav}
-        instant
         onDismiss={() => setAddDieOpen(false)}
         onConfirm={() => setAddDieOpen(false)}
         confirmLabel="Done"

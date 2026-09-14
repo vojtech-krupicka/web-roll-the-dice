@@ -35,7 +35,7 @@ type FormState = { mode: "add" } | { mode: "edit"; player: PlayerSummary } | nul
  * current player. The add/edit form is rendered inline in the SAME
  * DialogShell instance (just swapping title/content/confirm) rather than via
  * a separately-mounted dialog, so switching between the list and the form
- * doesn't remount the shell and re-trigger its slide animation.
+ * doesn't remount the shell.
  */
 export function PlayersPane({
   hash,
@@ -132,7 +132,6 @@ export function PlayersPane({
       <DialogShell
         title={form.mode === "add" ? "Add player" : "Edit player"}
         bottomNav={bottomNav}
-        instant
         onDismiss={() => setForm(null)}
         onConfirm={handleFormSubmit}
         confirmDisabled={formPending || !formName.trim()}
