@@ -513,13 +513,19 @@ export function GameView({
 
       <div className="relative mx-4 mt-[18px] flex-1">
         <DropArea
-          dice={diceInstances.map((die) => ({
-            key: die.key,
-            sides: die.sides,
-            face: faces[die.key] ?? 1,
-            settled: rollState !== "rolling" || settled[die.key] === true,
-            tumble: tumble[die.key] ?? DIE_REST_TUMBLE,
-          }))}
+          dice={diceInstances
+            // While the 3D physics dice are actively animating, hide their
+            // flat sprites — they'd otherwise sit there showing stale
+            // (previous-roll) faces underneath/around the real animation.
+            // Coins have no 3D model at all, so their sprite always stays.
+            .filter((die) => !(mode === "3d" && dice3DActive) || die.sides === 2)
+            .map((die) => ({
+              key: die.key,
+              sides: die.sides,
+              face: faces[die.key] ?? 1,
+              settled: rollState !== "rolling" || settled[die.key] === true,
+              tumble: tumble[die.key] ?? DIE_REST_TUMBLE,
+            }))}
           color={currentPlayer?.color}
           blurred={resultShowing}
         />
