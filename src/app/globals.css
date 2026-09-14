@@ -1,26 +1,56 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-stop-1: #171a2e;
+  --bg-stop-2: #0a0b14;
+  --bg-stop-3: #060710;
+
+  --color-panel: #12142a;
+  --color-panel-hover: #1a1c3a;
+  --color-panel-inset: #0d0e1e;
+  --color-border: #262a45;
+  --color-border-strong: #3a3f6e;
+  --color-text: #f4f5fb;
+  --color-muted: #9296b3;
+  --color-faint: #585c78;
+  --color-accent-cyan: #06b6d4;
+  --color-accent-violet: #8b5cf6;
+  --gradient-accent: linear-gradient(145deg, var(--color-accent-cyan) 0%, var(--color-accent-violet) 100%);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--bg-stop-2);
+  --color-foreground: var(--color-text);
+  --color-panel: var(--color-panel);
+  --color-panel-hover: var(--color-panel-hover);
+  --color-panel-inset: var(--color-panel-inset);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-muted: var(--color-muted);
+  --color-faint: var(--color-faint);
+  --color-accent-cyan: var(--color-accent-cyan);
+  --color-accent-violet: var(--color-accent-violet);
+  --font-sans: var(--font-space-grotesk);
+  --font-mono: var(--font-space-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer utilities {
+  .cta-gradient {
+    background: var(--gradient-accent);
+  }
+  .app-gradient-bg {
+    background: radial-gradient(ellipse at 50% 30%, var(--bg-stop-1) 0%, var(--bg-stop-2) 65%, var(--bg-stop-3) 100%);
   }
 }
 
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: radial-gradient(ellipse at 50% 30%, var(--bg-stop-1) 0%, var(--bg-stop-2) 65%, var(--bg-stop-3) 100%);
+  background-attachment: fixed;
+  color: var(--color-text);
 }

@@ -3,30 +3,42 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { TopBar } from "@/components/layout/TopBar";
-import { HandToggleButton } from "@/components/dice/HandToggleButton";
+import { BottomBar } from "@/components/layout/BottomBar";
 import { HandPane } from "@/components/dice/HandPane";
 import { DropArea } from "@/components/dice/DropArea";
 import { RollButton } from "@/components/dice/RollButton";
 import { ResultPopup } from "@/components/dice/ResultPopup";
+import { LeaveButton } from "@/components/game/LeaveButton";
 import { SettingsButton } from "@/components/game/SettingsButton";
 import { SettingsMenu } from "@/components/game/SettingsMenu";
 import { GameHashDialog } from "@/components/game/GameHashDialog";
 import { GameEditPane } from "@/components/game/GameEditPane";
-import { CurrentPlayerBar } from "@/components/game/CurrentPlayerBar";
+import { CurrentPlayerBadge } from "@/components/game/CurrentPlayerBadge";
 import { PlayersPane } from "@/components/game/PlayersPane";
-import { NextPlayerButton } from "@/components/game/NextPlayerButton";
-import { RollHistoryBar } from "@/components/game/RollHistoryBar";
+import { PlayerFormPane, type PlayerFormValues } from "@/components/game/PlayerFormPane";
+import { NextPlayerPill } from "@/components/game/NextPlayerPill";
+import { RollHistoryPill } from "@/components/game/RollHistoryPill";
 import { RollHistoryDialog } from "@/components/game/RollHistoryDialog";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { playDiceClack, playResultChime } from "@/lib/sound";
 import {
   recordRollAction,
   setCurrentPlayerAction,
+  updatePlayerAction,
   updatePlayerHandAction,
 } from "@/app/actions";
-import { ROLL_TICK_INTERVAL_MS, randomRollDuration, rollDie } from "@/lib/dice";
+import {
+  DIE_REST_TUMBLE,
+  randomRevealDelay,
+  randomRollDuration,
+  randomTumble,
+  rollDie,
+  tickIntervalForProgress,
+  tumbleIntensityForProgress,
+  type DieTumble,
+} from "@/lib/dice";
 import {
   DEFAULT_HAND,
-  activeDiceCount,
   flattenHand,
   pruneEmptyEnabledEntries,
   type DieSides,
@@ -36,6 +48,18 @@ import type { PlayerSummary } from "@/lib/players";
 import { computeRollData, type RollSummary } from "@/lib/rolls";
 
 type RollState = "idle" | "rolling" | "result";
+type ActiveDialog = "players" | "hand" | null;
+
+type RollResult = {
+  playerName: string;
+  playerColor: string;
+  dice: { key: string; sides: DieSides; value: number }[];
+  sum: number;
+  avg: number;
+  median: number;
+  min: number;
+  max: number;
+};
 
 type GameViewProps = {
   hash: string;
@@ -61,6 +85,7 @@ export function GameView({
   const [hasPassword, setHasPassword] = useState(initialHasPassword);
   const [welcomeOpen, setWelcomeOpen] = useState(searchParams.get("welcome") === "1");
   const [editOpen, setEditOpen] = useState(false);
+  const [editPlayerOpen, setEditPlayerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Drop the one-time `?welcome=1` marker from the URL once we've read it.
@@ -75,7 +100,6 @@ export function GameView({
 
   const [players, setPlayers] = useState<PlayerSummary[]>(initialPlayers);
   const [currentPlayerId, setCurrentPlayerId] = useState(initialCurrentPlayerId);
-  const [playersPaneOpen, setPlayersPaneOpen] = useState(false);
   const [nextPlayerConfirmOpen, setNextPlayerConfirmOpen] = useState(false);
 
   const currentPlayer = players.find((p) => p.id === currentPlayerId);
@@ -93,23 +117,22 @@ export function GameView({
     const initialHand = initialPlayers.find((p) => p.id === initialCurrentPlayerId)?.currentHand;
     return initialHand && initialHand.length > 0 ? initialHand : DEFAULT_HAND;
   });
-  const [handPaneOpen, setHandPaneOpen] = useState(false);
-  const [handError, setHandError] = useState<string | null>(null);
+
+  // ---- Players/Hand bottom-bar navigation — mutually exclusive ----
+
+  const [activeDialog, setActiveDialog] = useState<ActiveDialog>(null);
 
   const [rollState, setRollState] = useState<RollState>("idle");
   const [faces, setFaces] = useState<Record<string, number>>({});
-  const [result, setResult] = useState<number | null>(null);
-  const timersRef = useRef<{
-    intervals: ReturnType<typeof setInterval>[];
-    timeouts: ReturnType<typeof setTimeout>[];
-  }>({ intervals: [], timeouts: [] });
+  const [result, setResult] = useState<RollResult | null>(null);
+  const [settled, setSettled] = useState<Record<string, boolean>>({});
+  const [tumble, setTumble] = useState<Record<string, DieTumble>>({});
+  const timersRef = useRef<{ timeouts: ReturnType<typeof setTimeout>[] }>({ timeouts: [] });
 
   const diceInstances = useMemo(() => flattenHand(hand), [hand]);
 
   function clearRollTimers() {
-    timersRef.current.intervals.forEach(clearInterval);
     timersRef.current.timeouts.forEach(clearTimeout);
-    timersRef.current.intervals = [];
     timersRef.current.timeouts = [];
   }
 
@@ -127,12 +150,15 @@ export function GameView({
     setFaces({});
     setResult(null);
     setRollState("idle");
-    setHandError(null);
 
     void setCurrentPlayerAction(hash, playerId);
   }
 
   function handleNextPlayer() {
+    if (rollState === "result") {
+      setResult(null);
+      setRollState("idle");
+    }
     if (players.length <= 1) return;
     setNextPlayerConfirmOpen(true);
   }
@@ -144,32 +170,82 @@ export function GameView({
     setNextPlayerConfirmOpen(false);
   }
 
-  function handleToggleHandPane() {
-    if (!handPaneOpen) {
+  /** Switches which bottom-bar dialog is open (or closes it), persisting the hand first if leaving it. */
+  function requestActiveDialog(target: ActiveDialog) {
+    if (activeDialog === "hand" && target !== "hand") {
+      const pruned = pruneEmptyEnabledEntries(hand);
+      setHand(pruned);
+      if (currentPlayer) {
+        setPlayers((prev) =>
+          prev.map((p) => (p.id === currentPlayer.id ? { ...p, currentHand: pruned } : p)),
+        );
+        void updatePlayerHandAction(currentPlayer.id, pruned);
+      }
+    }
+
+    if (target === "hand") {
       clearRollTimers();
-      setHandError(null);
       setResult(null);
       setRollState("idle");
-      setHandPaneOpen(true);
-      return;
     }
 
-    if (activeDiceCount(hand) === 0) {
-      setHandError("Select at least one die before closing your hand.");
-      return;
-    }
+    setActiveDialog(target);
+  }
 
-    const pruned = pruneEmptyEnabledEntries(hand);
-    setHand(pruned);
-    setHandError(null);
-    setHandPaneOpen(false);
+  function goToPlayers() {
+    requestActiveDialog(activeDialog === "players" ? null : "players");
+  }
 
-    if (currentPlayer) {
-      setPlayers((prev) =>
-        prev.map((p) => (p.id === currentPlayer.id ? { ...p, currentHand: pruned } : p)),
-      );
-      void updatePlayerHandAction(currentPlayer.id, pruned);
+  function goToHand() {
+    requestActiveDialog(activeDialog === "hand" ? null : "hand");
+  }
+
+  function closeWelcomeThenGoToPlayers() {
+    setWelcomeOpen(false);
+    goToPlayers();
+  }
+
+  function closeWelcomeThenGoToHand() {
+    setWelcomeOpen(false);
+    goToHand();
+  }
+
+  function closeEditThenGoToPlayers() {
+    setEditOpen(false);
+    goToPlayers();
+  }
+
+  function closeEditThenGoToHand() {
+    setEditOpen(false);
+    goToHand();
+  }
+
+  function closeHistoryThenGoToPlayers() {
+    setHistoryOpen(false);
+    goToPlayers();
+  }
+
+  function closeHistoryThenGoToHand() {
+    setHistoryOpen(false);
+    goToHand();
+  }
+
+  function closeEditPlayerThenGoToPlayers() {
+    setEditPlayerOpen(false);
+    goToPlayers();
+  }
+
+  function closeEditPlayerThenGoToHand() {
+    setEditPlayerOpen(false);
+    goToHand();
+  }
+
+  async function handleEditCurrentPlayerSubmit(playerId: number, values: PlayerFormValues) {
+    const result = await updatePlayerAction(playerId, values);
+    if (result.ok) {
+      setPlayers((prev) => prev.map((p) => (p.id === playerId ? { ...p, ...values } : p)));
     }
+    setEditPlayerOpen(false);
   }
 
   function updateEntry(sides: DieSides, update: (entry: HandEntry) => HandEntry) {
@@ -199,38 +275,75 @@ export function GameView({
 
     clearRollTimers();
     setRollState("rolling");
+    setSettled({});
+    setTumble({});
 
     const finalFaces: Record<string, number> = {};
     let settledCount = 0;
 
-    diceInstances.forEach((die) => {
-      const intervalId = setInterval(() => {
-        setFaces((prev) => ({ ...prev, [die.key]: rollDie(die.sides) }));
-      }, ROLL_TICK_INTERVAL_MS);
-      timersRef.current.intervals.push(intervalId);
-
+    function scheduleReveal() {
       const timeoutId = setTimeout(async () => {
-        clearInterval(intervalId);
-        const finalValue = rollDie(die.sides);
-        finalFaces[die.key] = finalValue;
-        setFaces((prev) => ({ ...prev, [die.key]: finalValue }));
+        const rollData = computeRollData(
+          diceInstances.map((d) => ({ sides: d.sides, value: finalFaces[d.key] })),
+        );
+        setResult({
+          playerName: currentPlayer?.name ?? "Unknown player",
+          playerColor: currentPlayer?.color ?? "#9ca3af",
+          dice: diceInstances.map((d) => ({ key: d.key, sides: d.sides, value: finalFaces[d.key] })),
+          sum: rollData.sum,
+          avg: rollData.avg,
+          median: rollData.median,
+          min: rollData.min,
+          max: rollData.max,
+        });
+        setRollState("result");
+        playResultChime();
+        // Reset every die's tumble back to rest now that the result banner
+        // is about to show — values stay, positions/rotations reset.
+        setTumble({});
 
-        settledCount += 1;
-        if (settledCount === diceInstances.length) {
-          const rollData = computeRollData(
-            diceInstances.map((d) => ({ sides: d.sides, value: finalFaces[d.key] })),
-          );
-          setResult(rollData.sum);
-          setRollState("result");
-
-          if (currentPlayer) {
-            const response = await recordRollAction(hash, currentPlayer.id, rollData);
-            if (response.ok) {
-              setRolls((prev) => [response.data.roll, ...prev]);
-            }
+        if (currentPlayer) {
+          const response = await recordRollAction(hash, currentPlayer.id, rollData);
+          if (response.ok) {
+            setRolls((prev) => [response.data.roll, ...prev]);
           }
         }
-      }, randomRollDuration());
+      }, randomRevealDelay());
+      timersRef.current.timeouts.push(timeoutId);
+    }
+
+    diceInstances.forEach((die) => {
+      const duration = randomRollDuration();
+      const startedAt = Date.now();
+
+      function tick() {
+        const progress = Math.min((Date.now() - startedAt) / duration, 1);
+
+        if (progress >= 1) {
+          const finalValue = rollDie(die.sides);
+          finalFaces[die.key] = finalValue;
+          setFaces((prev) => ({ ...prev, [die.key]: finalValue }));
+          setSettled((prev) => ({ ...prev, [die.key]: true }));
+          playDiceClack(die.sides, true);
+          // Leave this die's tumble as-is — it stays put where it landed
+          // until the whole roll finishes, rather than snapping back
+          // individually.
+
+          settledCount += 1;
+          if (settledCount === diceInstances.length) scheduleReveal();
+          return;
+        }
+
+        setFaces((prev) => ({ ...prev, [die.key]: rollDie(die.sides) }));
+        // Tumble eases off (smaller moves) the closer this die is to settling.
+        setTumble((prev) => ({ ...prev, [die.key]: randomTumble(tumbleIntensityForProgress(progress)) }));
+        playDiceClack(die.sides);
+
+        const timeoutId = setTimeout(tick, tickIntervalForProgress(progress));
+        timersRef.current.timeouts.push(timeoutId);
+      }
+
+      const timeoutId = setTimeout(tick, tickIntervalForProgress(0));
       timersRef.current.timeouts.push(timeoutId);
     });
   }
@@ -240,59 +353,91 @@ export function GameView({
     setRollState("idle");
   }
 
+  const resultShowing = rollState === "result";
+  const dimWhenResult = resultShowing
+    ? "pointer-events-none opacity-30 transition-opacity duration-200"
+    : "transition-opacity duration-200";
+
   return (
     <div className="flex min-h-dvh flex-col">
-      <TopBar
-        left={
-          <div className="relative">
-            <SettingsButton onClick={() => setSettingsOpen(true)} />
-            {settingsOpen && (
-              <SettingsMenu hash={hash} onDismiss={() => setSettingsOpen(false)} />
-            )}
-          </div>
-        }
-        center={
-          <button
-            type="button"
-            onClick={() => setEditOpen(true)}
-            className="truncate text-base font-semibold"
-          >
-            {name}
-          </button>
-        }
-        right={<HandToggleButton open={handPaneOpen} onClick={handleToggleHandPane} />}
-      />
+      <div className={dimWhenResult}>
+        <TopBar
+          left={<LeaveButton hash={hash} />}
+          center={
+            <button
+              type="button"
+              onClick={() => setEditOpen(true)}
+              className="truncate text-sm font-bold"
+            >
+              {name}
+            </button>
+          }
+          right={
+            <div className="relative">
+              <SettingsButton onClick={() => setSettingsOpen(true)} />
+              {settingsOpen && (
+                <SettingsMenu hash={hash} onDismiss={() => setSettingsOpen(false)} />
+              )}
+            </div>
+          }
+        />
+      </div>
 
-      <CurrentPlayerBar player={currentPlayer} onClick={() => setPlayersPaneOpen(true)} />
-
-      <div className="relative flex flex-1 flex-col overflow-hidden">
+      <div className="relative mx-4 mt-[18px] flex-1">
         <DropArea
           dice={diceInstances.map((die) => ({
             key: die.key,
             sides: die.sides,
             face: faces[die.key] ?? 1,
+            settled: rollState !== "rolling" || settled[die.key] === true,
+            tumble: tumble[die.key] ?? DIE_REST_TUMBLE,
           }))}
           color={currentPlayer?.color}
+          blurred={resultShowing}
         />
 
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 pb-10">
-          {rollState === "result" && result !== null && (
-            <ResultPopup value={result} onDismiss={handleDismissResult} />
-          )}
-          <div className="flex w-full max-w-sm items-stretch gap-3">
-            <RollButton
-              disabled={rollState !== "idle" || handPaneOpen || !currentPlayer?.enabled}
-              onClick={handleRoll}
-            />
-            <NextPlayerButton disabled={players.length <= 1} onClick={handleNextPlayer} />
-          </div>
+        <div className={dimWhenResult}>
+          <CurrentPlayerBadge player={currentPlayer} onClick={() => setEditPlayerOpen(true)} />
         </div>
 
-        {handPaneOpen && (
+        <RollHistoryPill
+          lastRoll={lastRoll}
+          lastRollPlayer={lastRollPlayer}
+          onClick={() => setHistoryOpen(true)}
+        />
+        <NextPlayerPill disabled={players.length <= 1} onClick={handleNextPlayer} />
+
+        <BottomBar active={activeDialog} onPlayers={goToPlayers} onHand={goToHand} />
+
+        {resultShowing && result && (
+          <ResultPopup
+            playerName={result.playerName}
+            playerColor={result.playerColor}
+            dice={result.dice}
+            sum={result.sum}
+            avg={result.avg}
+            median={result.median}
+            min={result.min}
+            max={result.max}
+          />
+        )}
+
+        <RollButton
+          disabled={(rollState !== "idle" && !resultShowing) || activeDialog === "hand" || !currentPlayer?.enabled}
+          rolling={rollState === "rolling"}
+          showResult={resultShowing}
+          onClick={resultShowing ? handleDismissResult : handleRoll}
+        />
+
+        {activeDialog === "hand" && (
           <HandPane
             hand={hand}
             color={currentPlayer?.color}
-            error={handError}
+            bottomNav={{
+              active: activeDialog,
+              onPlayers: () => requestActiveDialog("players"),
+              onHand: () => requestActiveDialog(null),
+            }}
             onToggleEnabled={handleToggleEnabled}
             onIncrement={handleIncrement}
             onDecrement={handleDecrement}
@@ -301,33 +446,55 @@ export function GameView({
         )}
       </div>
 
-      <RollHistoryBar
-        lastRoll={lastRoll}
-        lastRollPlayer={lastRollPlayer}
-        onClick={() => setHistoryOpen(true)}
-      />
-
-      {welcomeOpen && <GameHashDialog hash={hash} onDismiss={() => setWelcomeOpen(false)} />}
+      {welcomeOpen && (
+        <GameHashDialog
+          hash={hash}
+          bottomNav={{ active: activeDialog, onPlayers: closeWelcomeThenGoToPlayers, onHand: closeWelcomeThenGoToHand }}
+          onDismiss={() => setWelcomeOpen(false)}
+        />
+      )}
 
       {editOpen && (
         <GameEditPane
           hash={hash}
           name={name}
           hasPassword={hasPassword}
+          bottomNav={{ active: activeDialog, onPlayers: closeEditThenGoToPlayers, onHand: closeEditThenGoToHand }}
           onNameChange={setName}
           onPasswordChanged={() => setHasPassword(true)}
           onDismiss={() => setEditOpen(false)}
         />
       )}
 
-      {playersPaneOpen && (
+      {editPlayerOpen && currentPlayer && (
+        <PlayerFormPane
+          mode="edit"
+          initial={currentPlayer}
+          defaultName={currentPlayer.name}
+          usedColors={players.filter((p) => p.id !== currentPlayer.id).map((p) => p.color)}
+          bottomNav={{
+            active: activeDialog,
+            onPlayers: closeEditPlayerThenGoToPlayers,
+            onHand: closeEditPlayerThenGoToHand,
+          }}
+          onSubmit={(values) => handleEditCurrentPlayerSubmit(currentPlayer.id, values)}
+          onDismiss={() => setEditPlayerOpen(false)}
+        />
+      )}
+
+      {activeDialog === "players" && (
         <PlayersPane
           hash={hash}
           players={players}
           currentPlayerId={currentPlayerId}
+          bottomNav={{
+            active: activeDialog,
+            onPlayers: () => requestActiveDialog(null),
+            onHand: () => requestActiveDialog("hand"),
+          }}
           onPlayersChange={setPlayers}
           onSwitchPlayer={switchToPlayer}
-          onDismiss={() => setPlayersPaneOpen(false)}
+          onDismiss={() => requestActiveDialog(null)}
         />
       )}
 
@@ -345,6 +512,7 @@ export function GameView({
         <RollHistoryDialog
           rolls={rolls}
           players={players}
+          bottomNav={{ active: activeDialog, onPlayers: closeHistoryThenGoToPlayers, onHand: closeHistoryThenGoToHand }}
           onRollsChange={setRolls}
           onDismiss={() => setHistoryOpen(false)}
         />

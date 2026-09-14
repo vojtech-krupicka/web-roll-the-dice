@@ -1,44 +1,42 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
-import { AlignCenter, ChevronsDown, ChevronsUp, Clock, Gauge } from "lucide-react";
+import { useState } from "react";
+import { Clock } from "lucide-react";
 import type { PlayerSummary } from "@/lib/players";
 import type { RollSummary } from "@/lib/rolls";
+import { Switch } from "@/components/ui/Switch";
+import { RollStats } from "./RollStats";
 
 type RollHistoryRowProps = {
   roll: RollSummary;
   player: PlayerSummary | undefined;
-  striped: boolean;
   onToggleValid: () => void;
 };
 
 /** One roll in the history list — expands in place to show the full breakdown. */
-export function RollHistoryRow({ roll, player, striped, onToggleValid }: RollHistoryRowProps) {
+export function RollHistoryRow({ roll, player, onToggleValid }: RollHistoryRowProps) {
   const [expanded, setExpanded] = useState(false);
   const parts = formatRollBreakdown(roll.data);
 
   return (
-    <div className={striped ? "bg-neutral-50 dark:bg-neutral-900/50" : ""}>
-      <button
-        type="button"
+    <div className="overflow-hidden rounded-2xl border border-border bg-panel">
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded((prev) => !prev)}
-        className={`flex w-full items-center gap-3 px-3 py-3 text-left transition ${
-          roll.isValid ? "" : "opacity-50"
-        }`}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setExpanded((prev) => !prev);
+          }
+        }}
+        className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left transition"
+        style={{ opacity: roll.isValid ? 1 : 0.5 }}
       >
-        <input
-          type="checkbox"
-          checked={roll.isValid}
-          onClick={(event) => event.stopPropagation()}
-          onChange={onToggleValid}
-          aria-label="Roll is valid"
-          className="h-5 w-5 shrink-0 accent-neutral-900 dark:accent-neutral-100"
-        />
-
         <span aria-hidden="true">{player?.icon}</span>
 
         <span
-          className={`flex-1 truncate font-medium ${roll.isValid ? "" : "line-through"}`}
+          className={`flex-1 truncate text-sm font-bold ${roll.isValid ? "" : "line-through"}`}
           style={{ color: player?.color }}
         >
           {player?.name ?? "Unknown player"}
@@ -47,58 +45,37 @@ export function RollHistoryRow({ roll, player, striped, onToggleValid }: RollHis
         <span className={`text-lg font-bold tabular-nums ${roll.isValid ? "" : "line-through"}`}>
           {roll.data.sum}
         </span>
-      </button>
+
+        <span onClick={(event) => event.stopPropagation()}>
+          <Switch checked={roll.isValid} onChange={onToggleValid} aria-label="Roll is valid" />
+        </span>
+      </div>
 
       {expanded && (
-        <div className="border-t border-neutral-200 px-3 py-3 dark:border-neutral-800">
-          <div className="flex items-center justify-end gap-1 text-xs text-neutral-400 dark:text-neutral-500">
+        <div className="border-t border-border px-4 py-3">
+          <div className="flex items-center justify-end gap-1 text-xs text-faint">
             <Clock size={12} aria-hidden="true" />
             {roll.createdAt.toLocaleString()}
           </div>
 
-          <div className="mt-1 flex flex-wrap items-center text-sm">
+          <div className="mt-1 flex flex-wrap items-center text-sm text-muted">
             {parts.map((part, index) => (
               <span key={index}>
-                {index > 0 && <span className="mx-1 text-neutral-400 dark:text-neutral-600">+</span>}
-                <span
-                  className={
-                    part.isMin || part.isMax ? "text-blue-600 dark:text-blue-400" : undefined
-                  }
-                >
+                {index > 0 && <span className="mx-1 text-faint">+</span>}
+                <span className={part.isMin || part.isMax ? "text-accent-cyan" : undefined}>
                   d{part.sides}({part.value})
                 </span>
               </span>
             ))}
           </div>
 
-          <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <Stat icon={<Gauge size={14} aria-hidden="true" />} label="Avg" value={roll.data.avg} />
-            <Stat
-              icon={<AlignCenter size={14} aria-hidden="true" />}
-              label="Median"
-              value={roll.data.median}
-            />
-            <Stat icon={<ChevronsDown size={14} aria-hidden="true" />} label="Min" value={roll.data.min} />
-            <Stat icon={<ChevronsUp size={14} aria-hidden="true" />} label="Max" value={roll.data.max} />
+          <div className="mt-3">
+            <RollStats avg={roll.data.avg} median={roll.data.median} min={roll.data.min} max={roll.data.max} />
           </div>
         </div>
       )}
     </div>
   );
-}
-
-function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: number }) {
-  return (
-    <div className="flex items-center gap-2 text-neutral-600 dark:text-neutral-400">
-      {icon}
-      <span>{label}:</span>
-      <span className="font-semibold text-neutral-900 dark:text-neutral-100">{formatNumber(value)}</span>
-    </div>
-  );
-}
-
-function formatNumber(value: number): string {
-  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
 type BreakdownPart = { sides: string; value: number; isMin: boolean; isMax: boolean };

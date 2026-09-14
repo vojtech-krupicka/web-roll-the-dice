@@ -1,24 +1,29 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
-import { DIE_TYPES, type DieSides, type HandEntry } from "@/lib/hand";
+import { DIE_TYPES, activeDiceCount, type DieSides, type HandEntry } from "@/lib/hand";
+import { DialogShell, type DialogBottomNav } from "@/components/ui/DialogShell";
 import { HandRow } from "./HandRow";
-import { AddDiePopup } from "./AddDiePopup";
+import { AddDieGrid } from "./AddDieGrid";
 
 type HandPaneProps = {
   hand: HandEntry[];
   color?: string;
-  error: string | null;
+  bottomNav: DialogBottomNav;
   onToggleEnabled: (sides: DieSides) => void;
   onIncrement: (sides: DieSides) => void;
   onDecrement: (sides: DieSides) => void;
   onAddDieType: (sides: DieSides) => void;
 };
 
-/** Overlay panel for editing the current hand — covers the drop area while open. */
+/**
+ * Full-screen hand editor — covers the drop area while open. The add-die
+ * grid is rendered inline in the SAME DialogShell instance (just swapping
+ * title/content/confirm) rather than via a separately-mounted dialog, so
+ * switching between the list and the grid doesn't remount the shell.
+ */
 export function HandPane({
   hand,
   color,
-  error,
+  bottomNav,
   onToggleEnabled,
   onIncrement,
   onDecrement,
@@ -27,13 +32,36 @@ export function HandPane({
   const [addDieOpen, setAddDieOpen] = useState(false);
   const allTypesAdded = hand.length >= DIE_TYPES.length;
 
-  return (
-    <div className="absolute inset-0 z-30 flex flex-col overflow-y-auto bg-background px-6 py-4">
-      <h2 className="text-sm font-semibold tracking-wide text-neutral-500 uppercase dark:text-neutral-400">
-        Your hand
-      </h2>
+  if (addDieOpen) {
+    return (
+      <DialogShell
+        title="Add die"
+        bottomNav={bottomNav}
+        onDismiss={() => setAddDieOpen(false)}
+        onConfirm={() => setAddDieOpen(false)}
+        confirmLabel="Done"
+      >
+        <AddDieGrid
+          existingEntries={hand}
+          onSelect={(sides) => {
+            onAddDieType(sides);
+            setAddDieOpen(false);
+          }}
+        />
+      </DialogShell>
+    );
+  }
 
-      <div className="mt-2 divide-y divide-neutral-200 dark:divide-neutral-800">
+  return (
+    <DialogShell
+      title="Your hand"
+      bottomNav={bottomNav}
+      onDismiss={bottomNav.onHand}
+      onConfirm={bottomNav.onHand}
+      confirmDisabled={activeDiceCount(hand) === 0}
+      addAction={allTypesAdded ? undefined : { label: "Add die", onClick: () => setAddDieOpen(true) }}
+    >
+      <div className="flex flex-col gap-1">
         {hand.map((entry) => (
           <HandRow
             key={entry.sides}
@@ -45,33 +73,6 @@ export function HandPane({
           />
         ))}
       </div>
-
-      <button
-        type="button"
-        onClick={() => setAddDieOpen(true)}
-        disabled={allTypesAdded}
-        className="mt-4 flex items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-300 py-3 text-sm font-medium text-neutral-600 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-900"
-      >
-        <Plus size={18} aria-hidden="true" />
-        Add die
-      </button>
-
-      {error && (
-        <p role="alert" className="mt-4 text-sm font-medium text-red-600 dark:text-red-400">
-          {error}
-        </p>
-      )}
-
-      {addDieOpen && (
-        <AddDiePopup
-          existingSides={hand.map((entry) => entry.sides)}
-          onSelect={(sides) => {
-            onAddDieType(sides);
-            setAddDieOpen(false);
-          }}
-          onDismiss={() => setAddDieOpen(false)}
-        />
-      )}
-    </div>
+    </DialogShell>
   );
 }

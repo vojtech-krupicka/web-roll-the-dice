@@ -6,6 +6,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ins
 
 ## [Unreleased]
 
+## [phase04] - 2026-09-14
+
+### Added
+
+- Full "Midnight Arcade" visual redesign: fixed dark theme (light mode dropped), cyan→violet gradient accents, Space Grotesk/Space Mono fonts, a large circular Roll button overflowing the bottom edge, edge-docked pills for the last roll and next player
+- A shared `DialogShell` (top/bottom bar, scrollable content, circular confirm FAB, optional "Add" action) and `BottomBar` (Players/Hand nav) used by the main screen and every dialog pane, replacing each dialog's own hand-rolled overlay
+- CSS tumble animation for rolling dice — movement and rotation across the drop area with genuine deceleration (position, rotation, and face-value flicker all ease to a stop) as each die settles, plus a short pause after the last die lands before the result reveals
+- Result reveal redesigned into a full-width banner: real die sprites at size/shape/color, the total, and an avg/median/min/max stat row (`RollStats`, shared with the roll-history row); blurs the drop area behind it while staying dismissible via its own OK or the next-player pill, with the roll-history and next-player pills still live
+- Sound effects via the Web Audio API (`src/lib/sound.ts`): a tap sound on every button, a distinct roll-press sound, per-die tumble/landing sounds (randomized per press/die, with per-die-size pitch variation), and a fanfare on the result reveal — real audio clips under `public/sounds/`, each with a synthesized fallback if the file is missing
+- A Sound on/off switch at the top of the settings menu, persisted to `localStorage`
+
+### Changed
+
+- Roll button doubles as the OK button once a result is showing; pressing it now plays the normal click sound instead of the roll sound (only an actual roll press does)
+- Every dialog's confirm FAB plays the normal click sound instead of the roll sound
+
+### Fixed
+
+- Bottom bar disappearing (and its buttons becoming unusable) while the result banner is showing
+- The last-roll pill painting above the Roll button when a player's name is long
+- Opening a dialog sliding the whole screen, including a duplicate bottom bar, instead of just the dialog's own content (the slide animation was ultimately removed entirely)
+
 ## [phase03] - 2026-09-13
 
 ### Added
@@ -43,7 +65,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ins
 - Roll button with a ~500ms random face-swap animation, settling on a `Math.random()` result
 - Result popup shown in front of the Roll button; dismissible with any click, which re-enables the button
 
-[Unreleased]: https://github.com/vojtech-krupicka/web-roll-the-dice/compare/phase03...HEAD
+[Unreleased]: https://github.com/vojtech-krupicka/web-roll-the-dice/compare/phase04...HEAD
+[phase04]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase04
 [phase03]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase03
 [phase02]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase02
 [phase01]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase01

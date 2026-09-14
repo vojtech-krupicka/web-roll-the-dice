@@ -1,40 +1,28 @@
 import { CopyButton } from "@/components/ui/CopyButton";
+import { DialogShell, type DialogBottomNav } from "@/components/ui/DialogShell";
 
 type GameHashDialogProps = {
   hash: string;
+  bottomNav: DialogBottomNav;
   onDismiss: () => void;
 };
 
 /** Shown once after joining/creating a game — the hash to save/share. */
-export function GameHashDialog({ hash, onDismiss }: GameHashDialogProps) {
+export function GameHashDialog({ hash, bottomNav, onDismiss }: GameHashDialogProps) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6"
-      onClick={onDismiss}
-    >
-      <div
-        className="w-full max-w-sm rounded-2xl bg-background p-6 text-center shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <p className="text-sm font-medium text-neutral-600 dark:text-neutral-400">Your game hash</p>
+    <DialogShell title="Your game hash" bottomNav={bottomNav} onDismiss={onDismiss} confirmLabel="Got it">
+      <div className="flex flex-col items-center pt-10 text-center">
+        <p className="text-sm font-semibold text-muted">Your game hash</p>
 
-        <div className="mt-2 flex items-center justify-center gap-2">
-          <span className="text-3xl font-bold tracking-[0.3em] uppercase">{hash}</span>
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <span className="font-mono text-3xl font-bold tracking-[0.25em] text-[#67e8f9] uppercase">{hash}</span>
           <CopyButton value={hash} />
         </div>
 
-        <p className="mt-3 text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="mt-4 max-w-[240px] text-sm text-muted">
           Save this hash — you&apos;ll need it to rejoin the game later.
         </p>
-
-        <button
-          type="button"
-          onClick={onDismiss}
-          className="mt-5 w-full rounded-xl bg-neutral-900 px-5 py-3 font-semibold text-white transition active:scale-95 dark:bg-neutral-100 dark:text-neutral-900"
-        >
-          Got it
-        </button>
       </div>
-    </div>
+    </DialogShell>
   );
 }

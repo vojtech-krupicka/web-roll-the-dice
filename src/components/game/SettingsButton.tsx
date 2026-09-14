@@ -1,19 +1,19 @@
-import { Settings } from "lucide-react";
+import { Menu } from "lucide-react";
 
 type SettingsButtonProps = {
   onClick: () => void;
 };
 
-/** Top-bar cog button that opens the Settings menu. */
+/** Top-bar hamburger button that opens the Settings menu (Legend/About). */
 export function SettingsButton({ onClick }: SettingsButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label="Settings"
-      className="flex h-10 w-10 items-center justify-center rounded-lg text-neutral-700 transition hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-900"
+      className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-border bg-white/[0.06] text-[#cbd5e1] transition hover:bg-white/10"
     >
-      <Settings size={20} aria-hidden="true" />
+      <Menu size={15} strokeWidth={2} aria-hidden="true" />
     </button>
   );
 }

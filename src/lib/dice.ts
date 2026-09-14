@@ -5,12 +5,54 @@
 export const ROLL_MIN_DURATION_MS = 500;
 export const ROLL_MAX_DURATION_MS = 2000;
 
-/** How often a rolling die's face swaps to a random value. */
-export const ROLL_TICK_INTERVAL_MS = 90;
+/** How often a rolling die's face/tumble updates at the very start of its roll. */
+export const ROLL_TICK_INTERVAL_MS = 100;
+
+/** How far apart updates have drifted by the time a die is about to settle. */
+export const ROLL_TICK_MAX_INTERVAL_MS = 340;
+
+/** Extra pause after every die has settled, before the result banner appears. */
+export const RESULT_REVEAL_MIN_DELAY_MS = 250;
+export const RESULT_REVEAL_MAX_DELAY_MS = 500;
 
 /** Picks a random roll-animation duration within the configured range. */
 export function randomRollDuration(): number {
   return ROLL_MIN_DURATION_MS + Math.random() * (ROLL_MAX_DURATION_MS - ROLL_MIN_DURATION_MS);
+}
+
+/** Picks a random pause before the result banner appears once every die has settled. */
+export function randomRevealDelay(): number {
+  return RESULT_REVEAL_MIN_DELAY_MS + Math.random() * (RESULT_REVEAL_MAX_DELAY_MS - RESULT_REVEAL_MIN_DELAY_MS);
+}
+
+/**
+ * Eases raw 0..1 progress so most of a roll stays fast/energetic and the
+ * slowdown is concentrated right at the end, rather than spread evenly
+ * across the whole duration — a cubic ease-in.
+ */
+function easeInCubic(t: number): number {
+  return t * t * t;
+}
+
+/**
+ * The delay before a rolling die's next tick, given how far through its own
+ * roll duration it is (0 = just started, 1 = about to settle). Ticks stay
+ * close to the starting cadence for most of the roll, then space out sharply
+ * right before settling — this governs both the tumble updates and the
+ * face-value flicker, so both visibly slow down together near the end.
+ */
+export function tickIntervalForProgress(progress: number): number {
+  return ROLL_TICK_INTERVAL_MS + easeInCubic(progress) * (ROLL_TICK_MAX_INTERVAL_MS - ROLL_TICK_INTERVAL_MS);
+}
+
+/**
+ * How much of the full tumble range (translate + rotation) to use, given how
+ * far through its roll duration a die is. Stays near full intensity for most
+ * of the roll and drops off sharply near the end, so the tumble itself
+ * (not just the tick rate) visibly decelerates.
+ */
+export function tumbleIntensityForProgress(progress: number): number {
+  return 1 - easeInCubic(progress);
 }
 
 /**
@@ -30,4 +72,26 @@ export function rollDie(sides: number): number {
 /** Rolls a single six-sided die. */
 export function rollD6(): number {
   return rollDie(6);
+}
+
+export type DieTumble = { x: number; y: number; rot: number };
+
+/** Rest position — no offset, no rotation. */
+export const DIE_REST_TUMBLE: DieTumble = { x: 0, y: 0, rot: 0 };
+
+const MAX_TUMBLE_X = 55;
+const MAX_TUMBLE_Y = 65;
+const MAX_TUMBLE_ROT = 360;
+
+/**
+ * A random offset + rotation for the CSS "tumble" effect while a die is
+ * mid-roll. `intensity` (0..1) scales the range down — pass a smaller value
+ * as the die approaches settling to make the tumble "decelerate".
+ */
+export function randomTumble(intensity: number = 1): DieTumble {
+  return {
+    x: (Math.random() * 2 - 1) * MAX_TUMBLE_X * intensity,
+    y: (Math.random() * 2 - 1) * MAX_TUMBLE_Y * intensity,
+    rot: (Math.random() * 2 - 1) * MAX_TUMBLE_ROT * intensity,
+  };
 }

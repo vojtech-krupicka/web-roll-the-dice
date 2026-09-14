@@ -22,24 +22,27 @@ export function CoinFace({ value, color, className }: CoinFaceProps) {
         cy="50"
         r="46"
         strokeWidth="4"
-        style={color ? { fill: color, stroke: "rgba(0,0,0,0.25)" } : undefined}
-        className={color ? undefined : "fill-white stroke-neutral-300 dark:fill-neutral-800 dark:stroke-neutral-600"}
+        style={
+          color
+            ? { fill: color, stroke: "rgba(0,0,0,0.25)" }
+            : { fill: "var(--color-panel-inset)", stroke: "var(--color-border-strong)" }
+        }
       />
       <circle
         cx="50"
         cy="50"
         r="36"
         strokeWidth="2"
-        style={color ? { stroke: "rgba(255,255,255,0.6)" } : undefined}
-        className={color ? "fill-none" : "fill-none stroke-neutral-300 dark:stroke-neutral-600"}
+        className="fill-none"
+        style={{ stroke: color ? "rgba(255,255,255,0.6)" : "var(--color-border-strong)" }}
       />
       <text
         x="50"
         y="52"
         textAnchor="middle"
         dominantBaseline="central"
-        style={{ fontSize: 34, ...(color ? { fill: "white" } : undefined) }}
-        className={color ? "font-bold" : "fill-neutral-900 font-bold dark:fill-neutral-100"}
+        style={{ fontSize: 34, fill: color ? "white" : "var(--color-muted)" }}
+        className="font-bold"
       >
         {heads ? "H" : "T"}
       </text>

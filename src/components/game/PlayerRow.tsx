@@ -1,7 +1,8 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Pencil, UserCheck } from "lucide-react";
+import { GripVertical, Pencil } from "lucide-react";
 import type { PlayerSummary } from "@/lib/players";
+import { Switch } from "@/components/ui/Switch";
 
 type PlayerRowProps = {
   player: PlayerSummary;
@@ -26,8 +27,8 @@ export function PlayerRow({ player, isCurrent, onToggleEnabled, onEdit, onSelect
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-2 rounded-xl p-2 ${
-        isCurrent ? "bg-neutral-100 dark:bg-neutral-900" : ""
+      className={`flex items-center gap-3 rounded-2xl border px-3 py-2.5 transition ${
+        isCurrent ? "border-accent-cyan/40 bg-accent-cyan/[0.07]" : "border-border bg-panel"
       } ${isDragging ? "z-10 opacity-50" : ""}`}
     >
       <button
@@ -35,47 +36,43 @@ export function PlayerRow({ player, isCurrent, onToggleEnabled, onEdit, onSelect
         {...attributes}
         {...listeners}
         aria-label="Drag to reorder"
-        className="touch-none cursor-grab p-1 text-neutral-400 active:cursor-grabbing"
+        className="touch-none cursor-grab text-faint active:cursor-grabbing"
       >
-        <GripVertical size={18} />
+        <GripVertical size={16} aria-hidden="true" />
       </button>
 
-      <input
-        type="checkbox"
-        checked={player.enabled}
-        onChange={onToggleEnabled}
-        aria-label={`Enable ${player.name}`}
-        className="h-5 w-5 shrink-0 accent-neutral-900 dark:accent-neutral-100"
-      />
-
-      <span aria-hidden="true" className="text-lg">
-        {player.icon}
-      </span>
-
-      <span
-        className={`flex-1 truncate font-medium ${player.enabled ? "" : "opacity-50"}`}
-        style={{ color: player.color }}
+      <div
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0a0b14] text-lg"
+        style={{
+          boxShadow: isCurrent ? `0 0 0 1.5px ${player.color}, 0 0 10px ${player.color}99` : `0 0 0 1.5px ${player.color}66`,
+        }}
       >
-        {player.name}
-      </span>
+        {player.icon}
+      </div>
 
       <button
         type="button"
         onClick={onSelect}
         disabled={isCurrent}
-        aria-label={`Make ${player.name} the current player`}
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-30 dark:text-neutral-400 dark:hover:bg-neutral-800"
+        className="min-w-0 flex-1 truncate text-left disabled:cursor-default"
       >
-        <UserCheck size={18} />
+        <span
+          className="truncate text-[15px] font-bold"
+          style={{ color: player.color, opacity: player.enabled ? 1 : 0.5 }}
+        >
+          {player.name}
+        </span>
       </button>
+
+      <Switch checked={player.enabled} onChange={onToggleEnabled} aria-label={`Enable ${player.name}`} />
 
       <button
         type="button"
         onClick={onEdit}
         aria-label={`Edit ${player.name}`}
-        className="flex h-9 w-9 items-center justify-center rounded-lg text-neutral-500 transition hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+        className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-white/5"
       >
-        <Pencil size={18} />
+        <Pencil size={16} aria-hidden="true" />
       </button>
     </div>
   );

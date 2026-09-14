@@ -1,23 +1,80 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import type { DieSides } from "@/lib/hand";
+import { RollStats } from "@/components/game/RollStats";
+import { DieSprite } from "./DieSprite";
+
+type ResultDie = { key: string; sides: DieSides; value: number };
+
 type ResultPopupProps = {
-  value: number;
-  onDismiss: () => void;
+  playerName: string;
+  playerColor: string;
+  dice: ResultDie[];
+  sum: number;
+  avg: number;
+  median: number;
+  min: number;
+  max: number;
 };
 
 /**
- * Full-screen dismiss layer showing the rolled value in a small bubble
- * in front of the Roll button. Clicking anywhere dismisses it.
+ * Reveal banner shown at the top of the (blurred) drop area once every die
+ * has settled — dismissed via the Roll FAB, which turns into an OK button
+ * while this is showing (see RollButton's `showResult` prop), or via the
+ * next-player pill.
  */
-export function ResultPopup({ value, onDismiss }: ResultPopupProps) {
+export function ResultPopup({ playerName, playerColor, dice, sum, avg, median, min, max }: ResultPopupProps) {
+  const [entered, setEntered] = useState(false);
+
+  useEffect(() => {
+    const id = setTimeout(() => setEntered(true), 20);
+    return () => clearTimeout(id);
+  }, []);
+
   return (
-    <button
-      type="button"
-      aria-label="Dismiss result and roll again"
-      onClick={onDismiss}
-      className="fixed inset-0 z-20 flex cursor-pointer items-end justify-center bg-black/10 pb-36 backdrop-blur-[1px] dark:bg-black/30"
-    >
-      <span className="rounded-2xl bg-neutral-900 px-10 py-5 text-4xl font-bold tabular-nums text-white shadow-2xl dark:bg-neutral-100 dark:text-neutral-900">
-        {value}
-      </span>
-    </button>
+    <div className="absolute inset-x-[-16px] top-1/2 z-[6] -translate-y-1/2 overflow-hidden border-y border-border bg-panel-inset">
+      <div
+        className={`flex flex-col items-center px-6 pt-6 pb-5 text-center transition-all duration-300 ease-out ${
+          entered ? "translate-y-0 scale-100 opacity-100" : "translate-y-2 scale-95 opacity-0"
+        }`}
+      >
+        <p className="text-lg font-black">Congratulations!</p>
+        <p className="mt-1 text-sm text-muted">
+          <span className="font-bold" style={{ color: playerColor }}>
+            {playerName}
+          </span>{" "}
+          rolled
+        </p>
+        <p
+          className="mt-1 text-6xl font-black tabular-nums"
+          style={{
+            backgroundImage: "var(--gradient-accent)",
+            WebkitBackgroundClip: "text",
+            backgroundClip: "text",
+            color: "transparent",
+            WebkitTextFillColor: "transparent",
+          }}
+        >
+          {sum}
+        </p>
+
+        <div className="mt-4 flex w-full flex-wrap items-center justify-center gap-3">
+          {dice.map((die) => (
+            <DieSprite
+              key={die.key}
+              sides={die.sides}
+              value={die.value}
+              color={playerColor}
+              className="h-12 w-12 drop-shadow-[0_0_10px_rgba(34,211,238,0.45)]"
+            />
+          ))}
+        </div>
+
+        <div className="mt-4 w-full max-w-[260px]">
+          <RollStats avg={avg} median={median} min={min} max={max} />
+        </div>
+      </div>
+    </div>
   );
 }
