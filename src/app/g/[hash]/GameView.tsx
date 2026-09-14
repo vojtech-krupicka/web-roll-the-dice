@@ -168,6 +168,7 @@ export function GameView({
   }
 
   function handleNextPlayer() {
+    setSettingsOpen(false);
     if (rollState === "result") {
       setResult(null);
       setRollState("idle");
@@ -185,6 +186,7 @@ export function GameView({
 
   /** Switches which bottom-bar dialog is open (or closes it), persisting the hand first if leaving it. */
   function requestActiveDialog(target: ActiveDialog) {
+    setSettingsOpen(false);
     if (activeDialog === "hand" && target !== "hand") {
       const pruned = pruneEmptyEnabledEntries(hand);
       setHand(pruned);
@@ -443,6 +445,7 @@ export function GameView({
   function handleRoll() {
     if (rollState !== "idle" || diceInstances.length === 0 || !currentPlayer?.enabled) return;
 
+    setSettingsOpen(false);
     clearRollTimers();
     setRollState("rolling");
     setSettled({});
@@ -481,7 +484,10 @@ export function GameView({
           center={
             <button
               type="button"
-              onClick={() => setEditOpen(true)}
+              onClick={() => {
+                setSettingsOpen(false);
+                setEditOpen(true);
+              }}
               className="truncate text-sm font-bold"
             >
               {name}
@@ -518,13 +524,22 @@ export function GameView({
         {mode === "3d" && <Dice3DArea ref={dice3DRef} active={dice3DActive} />}
 
         <div className={dimWhenResult}>
-          <CurrentPlayerBadge player={currentPlayer} onClick={() => setEditPlayerOpen(true)} />
+          <CurrentPlayerBadge
+            player={currentPlayer}
+            onClick={() => {
+              setSettingsOpen(false);
+              setEditPlayerOpen(true);
+            }}
+          />
         </div>
 
         <RollHistoryPill
           lastRoll={lastRoll}
           lastRollPlayer={lastRollPlayer}
-          onClick={() => setHistoryOpen(true)}
+          onClick={() => {
+            setSettingsOpen(false);
+            setHistoryOpen(true);
+          }}
         />
         <NextPlayerPill disabled={players.length <= 1} onClick={handleNextPlayer} />
 
