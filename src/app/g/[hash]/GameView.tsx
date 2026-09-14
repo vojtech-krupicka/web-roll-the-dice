@@ -556,9 +556,14 @@ export function GameView({
             setHistoryOpen(true);
           }}
         />
-        <NextPlayerPill disabled={players.length <= 1} onClick={handleNextPlayer} />
+        <NextPlayerPill disabled={rollState !== "idle" || players.length <= 1} onClick={handleNextPlayer} />
 
-        <BottomBar active={activeDialog} onPlayers={goToPlayers} onHand={goToHand} />
+        <BottomBar
+          active={activeDialog}
+          onPlayers={goToPlayers}
+          onHand={goToHand}
+          disabled={rollState !== "idle"}
+        />
 
         {resultShowing && result && (
           <ResultPopup
