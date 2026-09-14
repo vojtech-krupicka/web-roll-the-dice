@@ -5,11 +5,14 @@ import type { DieInstance } from "@/lib/hand";
 import type DiceBox from "@3d-dice/dice-box";
 
 export type Dice3DAreaHandle = {
-  /** Rolls the given (non-coin) dice via physics and resolves with each die's final value, keyed by `die.key`. */
-  roll: (dice: DieInstance[]) => Promise<Record<string, number>>;
+  /** Rolls the given (non-coin) dice via physics and resolves with each die's final value, keyed by `die.key`. Tints the dice with `color` (defaults to the app's accent) if given. */
+  roll: (dice: DieInstance[], color?: string) => Promise<Record<string, number>>;
   /** Removes any dice left sitting in the scene from a previous roll — call before showing a different player's hand. */
   clear: () => void;
 };
+
+/** Dice tint used when no player color is available (matches the app's cyan accent). */
+const DEFAULT_THEME_COLOR = "#06b6d4";
 
 type Dice3DAreaProps = {
   /**
@@ -50,6 +53,7 @@ export const Dice3DArea = forwardRef<Dice3DAreaHandle, Dice3DAreaProps>(function
           container: `#${CONTAINER_ID}`,
           assetPath: "/dice-box-assets/",
           scale: 4.5,
+          themeColor: DEFAULT_THEME_COLOR,
         });
         await diceBox.init();
         if (cancelled) return;
@@ -84,7 +88,7 @@ export const Dice3DArea = forwardRef<Dice3DAreaHandle, Dice3DAreaProps>(function
   useImperativeHandle(
     ref,
     () => ({
-      async roll(dice) {
+      async roll(dice, color) {
         if (dice.length === 0) return {};
 
         await readyPromiseRef.current;
@@ -99,7 +103,7 @@ export const Dice3DArea = forwardRef<Dice3DAreaHandle, Dice3DAreaProps>(function
         });
 
         const notation = Array.from(bySides.entries(), ([sides, group]) => ({ sides, qty: group.length }));
-        const results = await diceBox.roll(notation);
+        const results = await diceBox.roll(notation, { themeColor: color ?? DEFAULT_THEME_COLOR });
 
         const byKey: Record<string, number> = {};
         bySides.forEach((group, sides) => {

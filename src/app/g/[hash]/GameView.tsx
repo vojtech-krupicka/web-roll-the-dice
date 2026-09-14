@@ -401,7 +401,9 @@ export function GameView({
 
     if (polyhedralDice.length > 0) {
       try {
-        const results = dice3DRef.current ? await dice3DRef.current.roll(polyhedralDice) : {};
+        const results = dice3DRef.current
+          ? await dice3DRef.current.roll(polyhedralDice, currentPlayer?.color)
+          : {};
         polyhedralDice.forEach((die) => {
           finalFaces[die.key] = results[die.key] ?? rollDie(die.sides);
         });
