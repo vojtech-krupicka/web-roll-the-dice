@@ -37,6 +37,18 @@ export function AboutPopup({ onDismiss }: AboutPopupProps) {
 
         <p className="mt-3 font-mono text-xs tracking-wide text-faint">{APP_VERSION}</p>
 
+        <p className="mt-1 text-xs text-faint">
+          Sound effects by{" "}
+          <a
+            href="https://kenney.nl"
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-4"
+          >
+            Kenney.nl
+          </a>
+        </p>
+
         <div className="mt-4 flex flex-col gap-2">
           <a
             href="https://github.com/vojtech-krupicka/web-roll-the-dice"
@@ -56,7 +68,7 @@ export function AboutPopup({ onDismiss }: AboutPopupProps) {
           </a>
         </div>
 
-        <div className="my-4 border-t border-border" />
+        <div className="mt-5 mb-4 border-t border-border" />
 
         <a
           href="https://buymeacoffee.com/vojtech.krupicka"
