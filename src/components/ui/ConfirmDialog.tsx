@@ -1,3 +1,5 @@
+import { createPortal } from "react-dom";
+
 type ConfirmDialogProps = {
   title: string;
   message: string;
@@ -20,7 +22,11 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
-  return (
+  // Portaled to <body> — this can be opened from inside TopBar (e.g. the
+  // Leave-game confirm, via LeaveButton), a positioned/z-indexed ancestor
+  // that would otherwise trap this fixed overlay below other z-indexed
+  // elements elsewhere on the page, no matter how high its own z-index is.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
       onClick={onCancel}
@@ -57,6 +63,7 @@ export function ConfirmDialog({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

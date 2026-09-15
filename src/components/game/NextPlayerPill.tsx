@@ -20,7 +20,7 @@ export function NextPlayerPill({ disabled, onClick }: NextPlayerPillProps) {
         aria-hidden="true"
       />
       <span className="text-sm font-semibold text-muted transition-colors group-hover:text-accent-cyan group-disabled:text-muted">
-        Next
+        Next player
       </span>
     </button>
   );

@@ -12,6 +12,8 @@ Built in short, incremental phases — see [CHANGELOG.md](CHANGELOG.md) for the 
 - Postgres + [Drizzle ORM](https://orm.drizzle.team/)
 - [iron-session](https://github.com/vvo/iron-session) (game passwords) + [bcryptjs](https://github.com/dcodeIO/bcrypt.js) (password hashing)
 - [@dnd-kit](https://dndkit.com/) (drag-to-reorder players)
+- [@3d-dice/dice-box](https://github.com/3d-dice/dice-box) (3D physics roll mode)
+- Sound effects: [Kenney's Casino Audio pack](https://kenney.nl/assets/casino-audio) (CC0)
 
 ## Getting started
 
@@ -77,3 +79,14 @@ Each phase is a small, self-contained iteration, merged to `main` and tagged on 
 - Every die gets its own landing sound as it settles instead of one sound lumped at the end of the roll, timed so it never overlaps the roll-press sound
 - Respects the OS-level "reduce motion" accessibility setting: a roll still takes its usual ~1–2s and plays all its sounds, just without the spatial movement — 2D dice settle in place while their faces flicker, and 3D mode falls back to that same behavior instead of showing the physics animation
 - Switching player or hand mid-roll is now blocked until the roll finishes (an in-flight 3D physics roll can't be cancelled once started, so this closes a real race condition, not just a rough edge)
+
+### Phase 06 — Launch polish
+
+- A Help menu item explaining the app's main flows, and a "Game options" menu item for quick access to rename/password/delete/leave
+- About popup gains a version number, links to the source and release notes, and a Buy Me a Coffee link
+- Fixed dialogs (Legend/Help/About/confirm) occasionally rendering underneath other UI due to a CSS stacking quirk
+- Bottom-bar spacing/icon tweaks, and an MIT license with dependency/asset credits — the last of the phase-numbered releases before the app moves to semantic versioning for its public launch
+
+## License
+
+[MIT](LICENSE)

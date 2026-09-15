@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Dices, Users } from "lucide-react";
+import { Hand, Users } from "lucide-react";
 
 type BottomBarProps = {
   active: "players" | "hand" | null;
@@ -22,7 +22,7 @@ export function BottomBar({ active, onPlayers, onHand, disabled }: BottomBarProp
         disabled={disabled}
       />
       <NavButton
-        icon={<Dices size={22} strokeWidth={1.9} aria-hidden="true" />}
+        icon={<Hand size={22} strokeWidth={1.9} aria-hidden="true" />}
         label="Hand"
         active={active === "hand"}
         onClick={onHand}
@@ -55,8 +55,8 @@ function NavButton({
       disabled={disabled}
       aria-pressed={active}
       className={`group flex h-full w-1/2 cursor-pointer flex-col items-center justify-center gap-2 transition-colors hover:bg-white/5 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:active:scale-100 ${
-        active ? "text-accent-cyan" : "text-muted hover:text-white"
-      }`}
+        side === "left" ? "pr-12" : "pl-12"
+      } ${active ? "text-accent-cyan" : "text-muted hover:text-white"}`}
     >
       <span
         className={`inline-flex transition-transform duration-150 group-hover:scale-110 ${

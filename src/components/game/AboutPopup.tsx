@@ -1,4 +1,6 @@
-import { X } from "lucide-react";
+import { Coffee, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { APP_VERSION } from "@/lib/version";
 
 type AboutPopupProps = {
   onDismiss: () => void;
@@ -6,7 +8,8 @@ type AboutPopupProps = {
 
 /** Short "about this app" info modal. */
 export function AboutPopup({ onDismiss }: AboutPopupProps) {
-  return (
+  // Portaled to <body> — see HelpPopup for why (this is opened from inside TopBar).
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
       onClick={onDismiss}
@@ -32,15 +35,52 @@ export function AboutPopup({ onDismiss }: AboutPopupProps) {
           Build a hand of any mix of dice and roll them all at once.
         </p>
 
+        <p className="mt-3 font-mono text-xs tracking-wide text-faint">{APP_VERSION}</p>
+
+        <p className="mt-1 text-xs text-faint">
+          Sound effects by{" "}
+          <a
+            href="https://kenney.nl"
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-4"
+          >
+            Kenney.nl
+          </a>
+        </p>
+
+        <div className="mt-4 flex flex-col gap-2">
+          <a
+            href="https://github.com/vojtech-krupicka/web-roll-the-dice"
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm font-semibold text-accent-cyan underline underline-offset-4"
+          >
+            View source on GitHub
+          </a>
+          <a
+            href="https://github.com/vojtech-krupicka/web-roll-the-dice/releases"
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm font-semibold text-accent-cyan underline underline-offset-4"
+          >
+            What&apos;s new
+          </a>
+        </div>
+
+        <div className="mt-5 mb-4 border-t border-border" />
+
         <a
-          href="https://github.com/vojtech-krupicka/web-roll-the-dice"
+          href="https://buymeacoffee.com/vojtech.krupicka"
           target="_blank"
           rel="noreferrer"
-          className="mt-4 inline-block text-sm font-semibold text-accent-cyan underline underline-offset-4"
+          className="flex items-center justify-center gap-2 rounded-full border border-accent-violet/40 bg-accent-violet/10 px-4 py-2.5 text-sm font-semibold text-accent-violet transition hover:bg-accent-violet/20"
         >
-          View source on GitHub
+          <Coffee size={16} aria-hidden="true" />
+          Buy me a coffee
         </a>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

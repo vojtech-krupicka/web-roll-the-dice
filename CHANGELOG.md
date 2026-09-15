@@ -6,6 +6,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ins
 
 ## [Unreleased]
 
+## [phase06] - 2026-09-16
+
+### Added
+
+- A Help menu item (settings menu) covering games, hands, rolling, players, and 3D mode — Legend stays a pure die-shape reference
+- A "Game options" menu item at the top of the settings menu, opening the same rename/password-change/delete/leave pane the game name in the top bar already does
+- About popup: current version, "View source on GitHub" and "What's new" (releases) links, and a Buy Me a Coffee link
+- MIT license, with `@3d-dice/dice-box` and Kenney's CC0 Casino Audio pack credited in the README and About popup
+
+### Changed
+
+- Bottom-bar Players/Hand buttons padded away from the center Roll button (their labels were crowding it); Hand button's icon swapped from a dice icon to a hand icon (redundant next to the die sprites already on screen)
+- "Next" pill renamed to "Next player"
+
+### Fixed
+
+- Legend, Help, About, and the Yes/No confirm dialog rendering underneath the roll-history/next-player pills. Root cause: all four are opened from inside `TopBar`, a `position:relative`, z-indexed `<header>` — any `position:fixed` modal nested inside it gets its stacking compared at the header's rank, not its own, no matter how high the modal's own z-index is set. Fixed by portaling all four to `document.body`.
+- The settings menu staying open after pressing Roll or the roll-history pill
+
 ## [phase05] - 2026-09-15
 
 ### Added
@@ -86,7 +105,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ins
 - Roll button with a ~500ms random face-swap animation, settling on a `Math.random()` result
 - Result popup shown in front of the Roll button; dismissible with any click, which re-enables the button
 
-[Unreleased]: https://github.com/vojtech-krupicka/web-roll-the-dice/compare/phase05...HEAD
+[Unreleased]: https://github.com/vojtech-krupicka/web-roll-the-dice/compare/phase06...HEAD
+[phase06]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase06
 [phase05]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase05
 [phase04]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase04
 [phase03]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase03

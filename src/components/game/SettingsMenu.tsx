@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { BookOpen, Box, Info, Volume2, VolumeX } from "lucide-react";
+import { BookOpen, Box, HelpCircle, Info, Settings, Volume2, VolumeX } from "lucide-react";
 import { LegendPopup } from "./LegendPopup";
+import { HelpPopup } from "./HelpPopup";
 import { AboutPopup } from "./AboutPopup";
 import { Switch } from "@/components/ui/Switch";
 import { isMuted, setMuted } from "@/lib/sound";
@@ -17,10 +18,12 @@ type SettingsMenuProps = {
   onModeChange: (mode: RollMode) => void;
   /** Blocks changing the roll mode mid-roll — switching out from under an in-flight roll can't be cancelled cleanly. */
   modeChangeDisabled?: boolean;
+  /** Opens the same rename/password/delete/leave pane the game name in the top bar does. */
+  onOpenGameOptions: () => void;
   onDismiss: () => void;
 };
 
-type View = "menu" | "legend" | "about";
+type View = "menu" | "legend" | "help" | "about";
 
 /** Top-bar Settings popup: Legend / About. Leave lives directly in the top bar now. */
 export function SettingsMenu({
@@ -28,12 +31,14 @@ export function SettingsMenu({
   mode,
   onModeChange,
   modeChangeDisabled,
+  onOpenGameOptions,
   onDismiss,
 }: SettingsMenuProps) {
   const [view, setView] = useState<View>("menu");
   const [muted, setMutedState] = useState(() => isMuted());
 
   if (view === "legend") return <LegendPopup onDismiss={() => setView("menu")} />;
+  if (view === "help") return <HelpPopup onDismiss={() => setView("menu")} />;
   if (view === "about") return <AboutPopup onDismiss={() => setView("menu")} />;
 
   function handleModeChange(checked: boolean) {
@@ -50,6 +55,15 @@ export function SettingsMenu({
         className="absolute top-full right-0 z-40 mt-2 w-56 rounded-2xl border border-border bg-panel p-2 shadow-2xl"
         onClick={(event) => event.stopPropagation()}
       >
+        <MenuItem
+          icon={<Settings size={18} />}
+          label="Game options"
+          onClick={() => {
+            onDismiss();
+            onOpenGameOptions();
+          }}
+        />
+        <div className="my-1 border-t border-border" />
         <div className="flex w-full items-center gap-3 rounded-xl px-4 py-3">
           <Box size={18} className={mode === "3d" ? undefined : "text-muted"} />
           <span className="flex flex-1 items-center gap-1.5 text-left text-sm font-semibold">
@@ -79,6 +93,7 @@ export function SettingsMenu({
         </div>
         <div className="my-1 border-t border-border" />
         <MenuItem icon={<BookOpen size={18} />} label="Legend" onClick={() => setView("legend")} />
+        <MenuItem icon={<HelpCircle size={18} />} label="Help" onClick={() => setView("help")} />
         <MenuItem icon={<Info size={18} />} label="About" onClick={() => setView("about")} />
       </div>
     </>
