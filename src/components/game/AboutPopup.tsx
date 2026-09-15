@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { APP_VERSION } from "@/lib/version";
 
 type AboutPopupProps = {
   onDismiss: () => void;
@@ -32,14 +33,26 @@ export function AboutPopup({ onDismiss }: AboutPopupProps) {
           Build a hand of any mix of dice and roll them all at once.
         </p>
 
-        <a
-          href="https://github.com/vojtech-krupicka/web-roll-the-dice"
-          target="_blank"
-          rel="noreferrer"
-          className="mt-4 inline-block text-sm font-semibold text-accent-cyan underline underline-offset-4"
-        >
-          View source on GitHub
-        </a>
+        <p className="mt-3 font-mono text-xs tracking-wide text-faint">{APP_VERSION}</p>
+
+        <div className="mt-4 flex flex-col gap-2">
+          <a
+            href="https://github.com/vojtech-krupicka/web-roll-the-dice"
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm font-semibold text-accent-cyan underline underline-offset-4"
+          >
+            View source on GitHub
+          </a>
+          <a
+            href="https://github.com/vojtech-krupicka/web-roll-the-dice/releases"
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm font-semibold text-accent-cyan underline underline-offset-4"
+          >
+            What&apos;s new
+          </a>
+        </div>
       </div>
     </div>
   );

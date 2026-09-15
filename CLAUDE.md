@@ -81,7 +81,7 @@ Full DB-backed games with players and roll history, restyled into the dark "Midn
 
 ## Release workflow
 
-Each phase: branch `phaseNN` off `main` → implement → update README's phase list, CHANGELOG.md, and this file → merge to `main` → tag `phaseNN` (annotated) on `main`.
+Each phase: branch `phaseNN` off `main` → implement → update README's phase list, CHANGELOG.md, this file, and `src/lib/version.ts`'s `APP_VERSION` (shown in the About popup) → merge to `main` → tag `phaseNN` (annotated) on `main`.
 
 ## Roadmap (not yet built)
 

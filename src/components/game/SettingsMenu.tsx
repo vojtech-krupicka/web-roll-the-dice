@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { BookOpen, Box, Info, Volume2, VolumeX } from "lucide-react";
+import { BookOpen, Box, HelpCircle, Info, Volume2, VolumeX } from "lucide-react";
 import { LegendPopup } from "./LegendPopup";
+import { HelpPopup } from "./HelpPopup";
 import { AboutPopup } from "./AboutPopup";
 import { Switch } from "@/components/ui/Switch";
 import { isMuted, setMuted } from "@/lib/sound";
@@ -20,7 +21,7 @@ type SettingsMenuProps = {
   onDismiss: () => void;
 };
 
-type View = "menu" | "legend" | "about";
+type View = "menu" | "legend" | "help" | "about";
 
 /** Top-bar Settings popup: Legend / About. Leave lives directly in the top bar now. */
 export function SettingsMenu({
@@ -34,6 +35,7 @@ export function SettingsMenu({
   const [muted, setMutedState] = useState(() => isMuted());
 
   if (view === "legend") return <LegendPopup onDismiss={() => setView("menu")} />;
+  if (view === "help") return <HelpPopup onDismiss={() => setView("menu")} />;
   if (view === "about") return <AboutPopup onDismiss={() => setView("menu")} />;
 
   function handleModeChange(checked: boolean) {
@@ -79,6 +81,7 @@ export function SettingsMenu({
         </div>
         <div className="my-1 border-t border-border" />
         <MenuItem icon={<BookOpen size={18} />} label="Legend" onClick={() => setView("legend")} />
+        <MenuItem icon={<HelpCircle size={18} />} label="Help" onClick={() => setView("help")} />
         <MenuItem icon={<Info size={18} />} label="About" onClick={() => setView("about")} />
       </div>
     </>
