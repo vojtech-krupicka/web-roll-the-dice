@@ -6,6 +6,27 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ins
 
 ## [Unreleased]
 
+## [phase05] - 2026-09-15
+
+### Added
+
+- 3D physics roll mode (`@3d-dice/dice-box`), marked BETA, switchable alongside the existing 2D mode from the settings menu; persisted per-game (`games.settings.mode`), not just to the browser
+- The physics engine's own settled values are the roll's real result (it has no way to predetermine an outcome), tinted with the current player's color on every roll
+- A landing sound per die as it individually settles during a 3D roll, instead of one sound lumped at the very end
+- `prefers-reduced-motion` support: a roll still takes its usual time and plays all its sounds, just without the spatial movement — 2D dice settle in place while their faces flicker instead of tumbling, and 3D mode falls back to that same behavior rather than showing the physics animation
+
+### Changed
+
+- The 3D canvas is a transient overlay on top of the always-present flat drop area (visible only while dice are actually animating) rather than replacing it, so idle state, per-player hand resets, and coin rendering all come for free from the same code path both modes already shared
+- Coins (no supported 3D model) get their own lightweight flip animation and landing sound instead of sitting inert during a 3D roll
+- Next-player and the Players/Hand bottom-bar nav — and now the roll-mode toggle itself — disable while a roll is in flight or its result is showing; a 3D physics roll is a single in-flight promise that can't be cancelled like a 2D timer chain, so switching out from under one could previously leave it resolving against stale state
+
+### Fixed
+
+- The settings menu staying open after pressing the Roll button or roll-history pill, since both paint above its outside-click backdrop
+- A second roll by the same player briefly showing the previous roll's 3D dice still sitting in their landed positions
+- The 3D roll's model swap (physics dice back to flat sprites) happening as a visible flash before the result banner, instead of underneath it
+
 ## [phase04] - 2026-09-14
 
 ### Added
@@ -65,7 +86,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ins
 - Roll button with a ~500ms random face-swap animation, settling on a `Math.random()` result
 - Result popup shown in front of the Roll button; dismissible with any click, which re-enables the button
 
-[Unreleased]: https://github.com/vojtech-krupicka/web-roll-the-dice/compare/phase04...HEAD
+[Unreleased]: https://github.com/vojtech-krupicka/web-roll-the-dice/compare/phase05...HEAD
+[phase05]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase05
 [phase04]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase04
 [phase03]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase03
 [phase02]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase02

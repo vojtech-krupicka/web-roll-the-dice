@@ -69,3 +69,11 @@ Each phase is a small, self-contained iteration, merged to `main` and tagged on 
 - The result reveal is a full-width banner — dice shown at their real size/shape/color, the total, and an avg/median/min/max stat row — that blurs the drop area behind it while the roll history and next-player pills stay live
 - Sound effects throughout: a tap sound on every button, a distinct sound for the Roll press and for each die tumbling/landing (randomized per press/die, with per-die-size pitch variation), and a fanfare when the result banner appears — every sound has a synthesized fallback if its audio file is missing
 - A Sound on/off switch in the settings menu, persisted across sessions
+
+### Phase 05 — 3D physics roll mode
+
+- A real physics-based roll mode (`@3d-dice/dice-box`, WebGL) alongside the existing 2D one, marked BETA and switchable per-game from the settings menu; the choice persists to the game itself, not just your browser
+- The 3D dice are tinted in the current player's color, same as the 2D sprites; a physics roll is a transient overlay on top of the always-present flat drop area, so idle state, per-player hand resets, and coins (which have no 3D model, so they keep their own flip animation) all keep working exactly as before
+- Every die gets its own landing sound as it settles instead of one sound lumped at the end of the roll, timed so it never overlaps the roll-press sound
+- Respects the OS-level "reduce motion" accessibility setting: a roll still takes its usual ~1–2s and plays all its sounds, just without the spatial movement — 2D dice settle in place while their faces flicker, and 3D mode falls back to that same behavior instead of showing the physics animation
+- Switching player or hand mid-roll is now blocked until the roll finishes (an in-flight 3D physics roll can't be cancelled once started, so this closes a real race condition, not just a rough edge)
