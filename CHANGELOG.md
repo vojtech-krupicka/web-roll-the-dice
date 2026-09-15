@@ -2,9 +2,15 @@
 
 All notable changes to this project are documented here.
 
-The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Instead of semantic versioning, releases here are tagged by development phase (`phase01`, `phase02`, ...) — each one a self-contained learning iteration.
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and from v1.0.0 this project adheres to [Semantic Versioning](https://semver.org/). Releases through phase06 were tagged by development phase (`phase01`-`phase06`) instead, each one a self-contained learning iteration.
 
 ## [Unreleased]
+
+## [1.0.0] - 2026-09-16
+
+### Changed
+
+- Switched from phase-numbered releases (`phase01`-`phase06`) to semantic versioning — no functional changes since phase06, this marks the app's public launch
 
 ## [phase06] - 2026-09-16
 
@@ -105,7 +111,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Ins
 - Roll button with a ~500ms random face-swap animation, settling on a `Math.random()` result
 - Result popup shown in front of the Roll button; dismissible with any click, which re-enables the button
 
-[Unreleased]: https://github.com/vojtech-krupicka/web-roll-the-dice/compare/phase06...HEAD
+[Unreleased]: https://github.com/vojtech-krupicka/web-roll-the-dice/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/v1.0.0
 [phase06]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase06
 [phase05]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase05
 [phase04]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase04

@@ -2,7 +2,7 @@
 
 # web-roll-the-dice — project context
 
-A mobile-friendly dice-rolling web app, built primarily for personal use (D&D / board game sessions) and shared as a public link from this public GitHub repo. Developed in small, independent phases — each phase gets its own branch (`phaseNN`), is merged to `main`, tagged `phaseNN`, and logged in [CHANGELOG.md](CHANGELOG.md). See [README.md](README.md) for the phase-by-phase summary.
+A mobile-friendly dice-rolling web app, built primarily for personal use (D&D / board game sessions) and shared as a public link from this public GitHub repo. Through phase06, developed in small, independent phases (`phaseNN` branches, tagged `phaseNN`); from v1.0.0 onward, releases are tagged `vX.Y.Z` (semantic versioning) directly on `main`. See [CHANGELOG.md](CHANGELOG.md) for the full release history and [README.md](README.md) for the original phase-by-phase summary.
 
 ## Confirmed architecture
 
@@ -21,7 +21,7 @@ A mobile-friendly dice-rolling web app, built primarily for personal use (D&D / 
   - **2D (built, phase02):** flat SVG sprites, results from `Math.random()`, tinted in the current player's color (phase03).
   - **3D (built, phase05, marked BETA):** `@3d-dice/dice-box` (Babylon.js + ammo.js physics, no React Three Fiber). The engine's own settled values are the real result — dice-box has no way to force/predetermine an outcome, so unlike 2D this mode's fairness depends on its physics, not `Math.random()`. Coins (d2) have no 3D model in any dice-box theme, so they always fall back to a flat-sprite flip animation regardless of mode. No server-authoritative requirement (not multiplayer) — the result is computed client-side, animated, shown, then persisted to roll history exactly like 2D.
 
-## Current state (as of phase06)
+## Current state (as of v1.0.0)
 
 Full DB-backed games with players and roll history, restyled into the dark "Midnight Arcade" UI with animated dice and sound, plus an optional 3D physics roll mode. Routes: `/` (join/create) and `/g/[hash]` (the game itself).
 
@@ -82,14 +82,13 @@ Full DB-backed games with players and roll history, restyled into the dark "Midn
 
 ## Release workflow
 
-Each phase: branch `phaseNN` off `main` → implement → update README's phase list, CHANGELOG.md, this file, and `src/lib/version.ts`'s `APP_VERSION` (shown in the About popup) → merge to `main` → tag `phaseNN` (annotated) on `main`.
+Implement on `main` (or a short-lived feature branch merged back) → update CHANGELOG.md and this file, and bump the version in lockstep in both `package.json` and `src/lib/version.ts`'s `APP_VERSION` (shown in the About popup) → tag `vX.Y.Z` (annotated, on `main`). Bump **patch** for fixes, **minor** for new features, **major** for breaking changes or a significant redesign. (README's phase-by-phase list is a historical record through phase06 and isn't extended for new releases — CHANGELOG.md is the authoritative release log from v1.0.0 on.)
 
 ## Roadmap (not yet built)
 
-1. **v1.0.0 launch:** connect Vercel to this GitHub repo (production branch `main`), set `DATABASE_URL` (Neon, created phase06) and `SESSION_SECRET` as Vercel env vars, and deploy. No code changes expected — `pg.Pool` and the session cookie's `secure` flag are already environment-aware.
-2. Alongside the launch, retire the `phaseNN` versioning scheme (see "Resolved decisions") in favor of semantic versioning.
+1. **Deploy v1.0.0:** connect Vercel to this GitHub repo (production branch `main`), set `DATABASE_URL` (Neon, created phase06) and `SESSION_SECRET` as Vercel env vars, and deploy. No code changes expected — `pg.Pool` and the session cookie's `secure` flag are already environment-aware.
 
 ## Resolved decisions
 
 - **Coins (d2) stay mixable with other die types in the same hand, permanently — not planned as a future "split" feature.** Raised during phase05 (3D mode gives coins fundamentally different treatment — their own flip animation, sound, and visibility rules, since they have no 3D model at all) as "should selecting a coin exclude other die types?" No real tabletop scenario was found that needs the exclusivity, and the code already treats coins distinctly wherever it actually matters; adding a hand-composition restriction on top would be complexity with no concrete use case behind it.
-- **`phase06` is the last phase-numbered release.** The `phaseNN` branch/tag/`APP_VERSION` scheme was a deliberate fit for this project's original small-learning-iteration development style, but doesn't fit a public app with real users — from the v1.0.0 launch onward, releases use semantic versioning (major.minor.patch) instead. This file, the README, and CHANGELOG.md's versioning note get rewritten for the new scheme as part of that launch, on `main` directly (no more per-phase branches).
+- **`phase06` was the last phase-numbered release.** The `phaseNN` branch/tag/`APP_VERSION` scheme was a deliberate fit for this project's original small-learning-iteration development style, but doesn't fit a public app with real users. `v1.0.0` switches to semantic versioning (major.minor.patch) instead, tagged directly on `main` (no more per-release branches) — see "Release workflow" above.

@@ -87,6 +87,8 @@ Each phase is a small, self-contained iteration, merged to `main` and tagged on 
 - Fixed dialogs (Legend/Help/About/confirm) occasionally rendering underneath other UI due to a CSS stacking quirk
 - Bottom-bar spacing/icon tweaks, and an MIT license with dependency/asset credits — the last of the phase-numbered releases before the app moves to semantic versioning for its public launch
 
+*(From v1.0.0 onward, see [CHANGELOG.md](CHANGELOG.md) for release notes instead of a new entry here.)*
+
 ## License
 
 [MIT](LICENSE)
