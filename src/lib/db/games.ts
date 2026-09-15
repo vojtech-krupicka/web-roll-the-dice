@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "./client";
-import { games, players, type Game } from "./schema";
+import { games, players, type Game, type GameSettings } from "./schema";
 import { generateGameHash } from "@/lib/gameHash";
 import { DEFAULT_HAND } from "@/lib/hand";
 
@@ -83,5 +83,12 @@ export async function updateGameCurrentPlayer(gameId: number, playerId: number):
   await db
     .update(games)
     .set({ currentPlayerId: playerId, lastModified: new Date() })
+    .where(eq(games.id, gameId));
+}
+
+export async function updateGameSettings(gameId: number, settings: GameSettings): Promise<void> {
+  await db
+    .update(games)
+    .set({ settings, lastModified: new Date() })
     .where(eq(games.id, gameId));
 }

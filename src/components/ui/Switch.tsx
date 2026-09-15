@@ -5,19 +5,27 @@ type SwitchProps = {
   onChange: (checked: boolean) => void;
   /** Hex color for the "on" state — defaults to the app's cyan accent. Pass a player's color to tint it. */
   activeColor?: string;
+  disabled?: boolean;
   "aria-label"?: string;
 };
 
 /** A toggle switch, tintable per-player via `activeColor`. */
-export function Switch({ checked, onChange, activeColor = "#22d3ee", "aria-label": ariaLabel }: SwitchProps) {
+export function Switch({
+  checked,
+  onChange,
+  activeColor = "#22d3ee",
+  disabled,
+  "aria-label": ariaLabel,
+}: SwitchProps) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
       aria-label={ariaLabel}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
-      className="relative h-6 w-10 shrink-0 rounded-full transition-colors"
+      className="relative h-6 w-10 shrink-0 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-40"
       style={{ backgroundColor: checked ? `${activeColor}4d` : "rgba(148,163,184,0.15)" }}
     >
       <span

@@ -54,3 +54,21 @@ body {
   background-attachment: fixed;
   color: var(--color-text);
 }
+
+/*
+ * Flattens every CSS transition/animation (dialog slides, hover states,
+ * the result banner's fade/blur, the 3D canvas's opacity crossfade, ...)
+ * to effectively instant. The dice roll itself (2D tumble, 3D physics) is
+ * JS-driven and handled separately in src/lib/motion.ts / GameView.tsx —
+ * this only covers incidental CSS-only motion.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
