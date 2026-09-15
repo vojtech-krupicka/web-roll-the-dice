@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { Coffee, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { APP_VERSION } from "@/lib/version";
 
@@ -55,6 +55,18 @@ export function AboutPopup({ onDismiss }: AboutPopupProps) {
             What&apos;s new
           </a>
         </div>
+
+        <div className="my-4 border-t border-border" />
+
+        <a
+          href="https://buymeacoffee.com/vojtech.krupicka"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center justify-center gap-2 rounded-full border border-accent-violet/40 bg-accent-violet/10 px-4 py-2.5 text-sm font-semibold text-accent-violet transition hover:bg-accent-violet/20"
+        >
+          <Coffee size={16} aria-hidden="true" />
+          Buy me a coffee
+        </a>
       </div>
     </div>,
     document.body,
