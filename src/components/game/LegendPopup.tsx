@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { createPortal } from "react-dom";
 import { DIE_TYPES } from "@/lib/hand";
 import { DieSprite } from "@/components/dice/DieSprite";
 
@@ -8,7 +9,8 @@ type LegendPopupProps = {
 
 /** Read-only reference grid of every die type — same layout as Add Die, but not interactive. */
 export function LegendPopup({ onDismiss }: LegendPopupProps) {
-  return (
+  // Portaled to <body> — see HelpPopup for why (this is opened from inside TopBar).
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
       onClick={onDismiss}
@@ -41,6 +43,7 @@ export function LegendPopup({ onDismiss }: LegendPopupProps) {
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

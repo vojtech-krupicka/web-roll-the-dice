@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { createPortal } from "react-dom";
 
 type HelpPopupProps = {
   onDismiss: () => void;
@@ -46,7 +47,11 @@ const SECTIONS: Section[] = [
 
 /** Short how-to-use reference, covering the app's main flows section by section. */
 export function HelpPopup({ onDismiss }: HelpPopupProps) {
-  return (
+  // Portaled to <body> — this can be opened from inside TopBar (a positioned,
+  // z-indexed stacking context), which would otherwise trap this fixed
+  // overlay below anything elsewhere on the page that also sets a z-index
+  // (the roll-history/next-player pills), no matter how high this z-index is.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
       onClick={onDismiss}
@@ -82,6 +87,7 @@ export function HelpPopup({ onDismiss }: HelpPopupProps) {
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

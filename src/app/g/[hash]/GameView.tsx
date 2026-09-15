@@ -524,6 +524,7 @@ export function GameView({
                   mode={mode}
                   onModeChange={setMode}
                   modeChangeDisabled={rollState !== "idle"}
+                  onOpenGameOptions={() => setEditOpen(true)}
                   onDismiss={() => setSettingsOpen(false)}
                 />
               )}

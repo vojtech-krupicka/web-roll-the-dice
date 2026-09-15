@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { createPortal } from "react-dom";
 import { APP_VERSION } from "@/lib/version";
 
 type AboutPopupProps = {
@@ -7,7 +8,8 @@ type AboutPopupProps = {
 
 /** Short "about this app" info modal. */
 export function AboutPopup({ onDismiss }: AboutPopupProps) {
-  return (
+  // Portaled to <body> — see HelpPopup for why (this is opened from inside TopBar).
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-6"
       onClick={onDismiss}
@@ -54,6 +56,7 @@ export function AboutPopup({ onDismiss }: AboutPopupProps) {
           </a>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
