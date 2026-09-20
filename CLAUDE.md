@@ -21,9 +21,9 @@ A mobile-friendly dice-rolling web app, built primarily for personal use (D&D / 
   - **2D (built, phase02):** flat SVG sprites, results from `Math.random()`, tinted in the current player's color (phase03).
   - **3D (built, phase05, marked BETA):** `@3d-dice/dice-box` (Babylon.js + ammo.js physics, no React Three Fiber). The engine's own settled values are the real result — dice-box has no way to force/predetermine an outcome, so unlike 2D this mode's fairness depends on its physics, not `Math.random()`. Coins (d2) have no 3D model in any dice-box theme, so they always fall back to a flat-sprite flip animation regardless of mode. No server-authoritative requirement (not multiplayer) — the result is computed client-side, animated, shown, then persisted to roll history exactly like 2D.
 
-## Current state (as of v1.0.0)
+## Current state (as of v1.0.1)
 
-Full DB-backed games with players and roll history, restyled into the dark "Midnight Arcade" UI with animated dice and sound, plus an optional 3D physics roll mode. Routes: `/` (join/create) and `/g/[hash]` (the game itself).
+Full DB-backed games with players and roll history, restyled into the dark "Midnight Arcade" UI with animated dice and sound, plus an optional 3D physics roll mode. Routes: `/` (join/create) and `/g/[hash]` (the game itself). App icons use Next's file conventions: `src/app/icon.svg` (tab favicon) and `src/app/apple-icon.tsx` (a 180×180 PNG generated via `ImageResponse`, used for Android/iOS home-screen shortcuts) — there is deliberately no `favicon.ico`.
 
 **Data / server layer:**
 - `src/lib/db/schema.ts` / `client.ts` — Drizzle schema and the `pg`-backed client.

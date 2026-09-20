@@ -6,6 +6,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-09-21
+
+### Added
+
+- A proper app icon: a d20-style gradient hexagon matching the home screen logo, as a browser-tab favicon (`icon.svg`) and a generated touch icon for Android/iOS home-screen shortcuts (`apple-icon`), replacing the default Next.js favicon
+
 ## [1.0.0] - 2026-09-16
 
 ### Changed
@@ -111,7 +117,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Roll button with a ~500ms random face-swap animation, settling on a `Math.random()` result
 - Result popup shown in front of the Roll button; dismissible with any click, which re-enables the button
 
-[Unreleased]: https://github.com/vojtech-krupicka/web-roll-the-dice/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/vojtech-krupicka/web-roll-the-dice/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/vojtech-krupicka/web-roll-the-dice/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/v1.0.0
 [phase06]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase06
 [phase05]: https://github.com/vojtech-krupicka/web-roll-the-dice/releases/tag/phase05
