@@ -6,11 +6,11 @@ A mobile-friendly dice-rolling web app, built primarily for personal use (D&D / 
 
 ## Confirmed architecture
 
-- **Framework:** Next.js (App Router, TypeScript), deployed to Vercel eventually (not yet deployed).
+- **Framework:** Next.js (App Router, TypeScript), deployed to Vercel (live since v1.0.0).
 - **Styling:** Tailwind CSS v4, dark-only — a fixed "Midnight Arcade" palette (near-black radial-gradient background, cyan→violet gradient accents, Space Grotesk/Space Mono fonts) set as CSS custom properties in `globals.css` and exposed as `@theme` tokens; no light mode, no `prefers-color-scheme` (phase04). `globals.css` also flattens every CSS transition/animation duration under `@media (prefers-reduced-motion: reduce)` (phase05) — covers all incidental motion (dialogs, hover states, the 3D canvas's crossfade, ...) app-wide with no component changes; the roll animation itself is JS-driven and handled separately (see `src/lib/motion.ts`, `GameView.tsx`).
 - **Icons:** `lucide-react`.
 - **Sound:** Web Audio API (`src/lib/sound.ts`), no audio library. Real clips under `public/sounds/` for taps/rolls/fanfare, each with a synthesized (oscillator/noise-buffer) fallback if the file is missing — see "Sound system" below.
-- **Database:** Postgres via **Drizzle ORM** (`drizzle-orm/node-postgres` + `pg`) — built, phase03. Local dev DB: Postgres 17 in Docker (`dice-pg`, `postgres:17`, password `dev`), reachable at `localhost:5432` from Windows directly (Docker Desktop bridges WSL2↔Windows `localhost`, so this isn't WSL-dependent). Migrations are generated with `npm run db:generate` and applied with `npm run db:migrate` (drizzle-kit; SQL files live in `drizzle/`). Production uses a **Neon** Postgres 17 project (created phase06) — same migrations applied against it with no code changes (`pg.Pool` works unchanged against Neon's connection string); not yet wired into a live deployment.
+- **Database:** Postgres via **Drizzle ORM** (`drizzle-orm/node-postgres` + `pg`) — built, phase03. Local dev DB: Postgres 17 in Docker (`dice-pg`, `postgres:17`, password `dev`), reachable at `localhost:5432` from Windows directly (Docker Desktop bridges WSL2↔Windows `localhost`, so this isn't WSL-dependent). Migrations are generated with `npm run db:generate` and applied with `npm run db:migrate` (drizzle-kit; SQL files live in `drizzle/`). Production runs against a **Neon** Postgres 17 project (created phase06, live since v1.0.0) — same migrations applied against it with no code changes (`pg.Pool` works unchanged against Neon's connection string).
 - **No multiplayer / no realtime.** The app is used by one person's browser at a time (a DM/host). "Players" are named entities within a game (name/color/icon/enabled), not authenticated identities — there's no per-player login.
 - **Game access model (built):** a `game` has a 5-character hash (unambiguous alphabet, collision-checked on create) and an optional password (bcryptjs-hashed). Home page: hash input + "Join" (a single password field appears if the game is protected; repeat-password only appears on Create and on changing a password), and "Create game" (name + optional password, with repeat). A correct password grants a signed **iron-session** cookie (`src/lib/session.ts`) recording which game ids this browser has unlocked; `/g/[hash]` checks it server-side and redirects to `/?hash=...` if not unlocked, or `/?error=not-found` if the hash doesn't exist.
 - **Data model (built):** see `src/lib/db/schema.ts`.
@@ -21,9 +21,9 @@ A mobile-friendly dice-rolling web app, built primarily for personal use (D&D / 
   - **2D (built, phase02):** flat SVG sprites, results from `Math.random()`, tinted in the current player's color (phase03).
   - **3D (built, phase05, marked BETA):** `@3d-dice/dice-box` (Babylon.js + ammo.js physics, no React Three Fiber). The engine's own settled values are the real result — dice-box has no way to force/predetermine an outcome, so unlike 2D this mode's fairness depends on its physics, not `Math.random()`. Coins (d2) have no 3D model in any dice-box theme, so they always fall back to a flat-sprite flip animation regardless of mode. No server-authoritative requirement (not multiplayer) — the result is computed client-side, animated, shown, then persisted to roll history exactly like 2D.
 
-## Current state (as of v1.0.0)
+## Current state (as of v1.0.1)
 
-Full DB-backed games with players and roll history, restyled into the dark "Midnight Arcade" UI with animated dice and sound, plus an optional 3D physics roll mode. Routes: `/` (join/create) and `/g/[hash]` (the game itself).
+Full DB-backed games with players and roll history, restyled into the dark "Midnight Arcade" UI with animated dice and sound, plus an optional 3D physics roll mode. Routes: `/` (join/create) and `/g/[hash]` (the game itself). App icons use Next's file conventions: `src/app/icon.svg` (tab favicon) and `src/app/apple-icon.tsx` (a 180×180 PNG generated via `ImageResponse`, used for Android/iOS home-screen shortcuts) — there is deliberately no `favicon.ico`.
 
 **Data / server layer:**
 - `src/lib/db/schema.ts` / `client.ts` — Drizzle schema and the `pg`-backed client.
@@ -82,11 +82,11 @@ Full DB-backed games with players and roll history, restyled into the dark "Midn
 
 ## Release workflow
 
-Implement on `main` (or a short-lived feature branch merged back) → update CHANGELOG.md and this file, and bump the version in lockstep in both `package.json` and `src/lib/version.ts`'s `APP_VERSION` (shown in the About popup) → tag `vX.Y.Z` (annotated, on `main`). Bump **patch** for fixes, **minor** for new features, **major** for breaking changes or a significant redesign. (README's phase-by-phase list is a historical record through phase06 and isn't extended for new releases — CHANGELOG.md is the authoritative release log from v1.0.0 on.)
+`main` is production — Vercel auto-deploys every push to it, so nothing is committed to it directly anymore. Instead: do all work on `dev` (or a short-lived feature branch merged into `dev`), and get it tested there — Vercel gives every branch/PR its own preview deployment automatically, no config needed. When it's ready to ship, still on `dev`: update CHANGELOG.md and this file, and bump the version in lockstep in both `package.json` and `src/lib/version.ts`'s `APP_VERSION` (shown in the About popup). Open the PR into `main`; once merged, tag `vX.Y.Z` (annotated, on `main` — tagging doesn't add a commit, so this is fine directly on `main`). Bump **patch** for fixes, **minor** for new features, **major** for breaking changes or a significant redesign. (README's phase-by-phase list is a historical record through phase06 and isn't extended for new releases — CHANGELOG.md is the authoritative release log from v1.0.0 on.)
 
 ## Roadmap (not yet built)
 
-1. **Deploy v1.0.0:** connect Vercel to this GitHub repo (production branch `main`), set `DATABASE_URL` (Neon, created phase06) and `SESSION_SECRET` as Vercel env vars, and deploy. No code changes expected — `pg.Pool` and the session cookie's `secure` flag are already environment-aware.
+Nothing currently planned — v1.0.0 is live on Vercel + Neon.
 
 ## Resolved decisions
 
